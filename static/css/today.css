@@ -65,14 +65,18 @@
 
 .sinead-nudge .nudge-actions {
   display: flex;
+  align-items: center;
   gap: var(--sp-xs);
   flex-shrink: 0;
 }
 
+/* Visible size stays small so the card stays slim; the invisible ::after
+   stretches each tap area to 44px. */
 .sinead-nudge .nudge-actions button {
+  position: relative;
   font-size: var(--fs-xs);
   font-weight: 700;
-  min-height: 28px;
+  min-height: 32px;
   padding: 0 var(--sp-sm);
   border-radius: var(--radius-full);
   background: var(--bg-raised);
@@ -80,10 +84,34 @@
   color: var(--text-primary);
   transition: background 0.15s ease, transform 0.15s ease;
 }
-
+.sinead-nudge .nudge-actions button::after {
+  content: '';
+  position: absolute;
+  inset: -6px -4px;
+}
 .sinead-nudge .nudge-actions button:hover {
   background: var(--bg-card);
   transform: translateY(-1px);
+}
+
+/* The close (x) is a quiet icon, no pill, so "Add" is the only real button */
+.sinead-nudge .nudge-actions .nudge-dismiss {
+  width: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-secondary);
+}
+.sinead-nudge .nudge-actions .nudge-dismiss svg {
+  width: 16px;
+  height: 16px;
+}
+.sinead-nudge .nudge-actions .nudge-dismiss:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
 }
 
 /* ===== Morning routine timeline ===== */
@@ -336,31 +364,51 @@
 .capture-hint {
   font-family: var(--font-hand);
   font-size: var(--fs-md);
+  line-height: 1.25;
   color: var(--text-secondary);
   margin-bottom: var(--sp-sm);
 }
 
-.capture-input-row {
-  display: flex;
-  gap: var(--sp-sm);
-  align-items: flex-start;
+/* One rounded field holds the text, the mic and the button */
+.capture-composer {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  transition: box-shadow 0.15s var(--ease-soft);
+}
+.capture-composer:focus-within {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
 }
 
 .today-capture textarea {
-  flex: 1;
-  min-height: 80px;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 88px;
+  max-height: 220px;
   padding: var(--sp-sm) var(--sp-md);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-soft);
-  background: var(--bg-raised);
+  border: 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: transparent;
   color: var(--text-primary);
   font-family: var(--font-body);
   font-size: var(--fs-sm);
-  resize: vertical;
+  line-height: 1.45;
+  resize: none;
+  outline: none;
 }
-.today-capture textarea:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 1px;
+.today-capture textarea::placeholder {
+  color: var(--text-secondary);
+}
+
+/* Bottom row inside the field: mic on the left, Sort my day on the right */
+.capture-composer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-sm);
+  padding: 0 var(--sp-sm) var(--sp-sm);
 }
 
 .capture-mic-btn {
@@ -369,12 +417,13 @@
   height: 44px;
   min-height: 44px;
   border-radius: var(--radius-full);
-  background: var(--accent-primary);
-  color: var(--accent-on);
+  background: transparent;
+  border: 1px solid var(--accent-primary);
+  color: var(--accent-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.15s var(--ease-soft);
+  transition: transform 0.15s var(--ease-soft), background 0.15s var(--ease-soft);
 }
 .capture-mic-btn svg {
   width: 20px;
@@ -389,6 +438,8 @@
 
 /* mock "listening" state — honest preview, no fake backend */
 .capture-mic-btn.recording {
+  background: var(--accent-primary);
+  color: var(--accent-on);
   animation: mic-pulse 1.4s ease-in-out infinite;
 }
 @keyframes mic-pulse {
@@ -396,18 +447,11 @@
   50%      { box-shadow: 0 0 0 12px transparent; }
 }
 
-.capture-footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--sp-sm);
-  margin-top: var(--sp-sm);
-}
-
 .capture-mic-status {
   font-size: var(--fs-xs);
   color: var(--text-secondary);
   flex: 1;
+  min-width: 0;
 }
 
 .btn-capture-submit {
@@ -486,29 +530,13 @@
 
 @media (max-width: 700px) {
   .today-capture {
-    padding: var(--sp-sm) var(--sp-md);
-  }
-
-  .capture-input-row {
-    flex-direction: column;
-  }
-  .capture-mic-btn {
-    align-self: flex-end;
+    padding: var(--sp-md);
   }
 
   /* iOS Safari auto-zooms the whole page when a focused input's font
-     is under 16px — the textarea's normal 13px (--fs-sm) would trigger
-     that jarring zoom on every tap. 16px here avoids it. */
+     is under 16px, so the textarea uses 16px on phones. */
   .today-capture textarea {
     font-size: 16px;
-  }
-
-  .capture-footer {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .btn-capture-submit {
-    width: 100%;
   }
 
   /* One scrollable row instead of wrapping — easier to scan and tap
