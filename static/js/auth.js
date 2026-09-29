@@ -42,10 +42,25 @@ const Auth = {
       return;
     }
 
-    // Real auth (Firebase) plugs in here later — for now, this is the
-    // mock-data version, so any valid-looking input logs you in.
     this.hideError();
-    this.login();
+    this.login(email, password);
+  },
+
+  // Turns Firebase's error codes into gentle, plain sentences
+  friendlyError(error) {
+    const messages = {
+      'auth/invalid-credential': 'That email and password don\u2019t match. Try again?',
+      'auth/wrong-password': 'That email and password don\u2019t match. Try again?',
+      'auth/user-not-found': 'We can\u2019t find an account with that email.',
+      'auth/invalid-email': 'That email doesn\u2019t look quite right \u2014 double check it.',
+      'auth/email-already-in-use': 'There\u2019s already an account with that email. Try signing in instead.',
+      'auth/weak-password': 'Password needs to be at least 6 characters.',
+      'auth/too-many-requests': 'Lots of tries in a row. Take a breath and try again in a few minutes.',
+      'auth/network-request-failed': 'Couldn\u2019t reach the internet. Check your connection and try again.',
+      'auth/user-disabled': 'This account has been switched off.',
+      'auth/operation-not-allowed': 'New accounts are switched off right now.'
+    };
+    return messages[error?.code] || 'Something went wrong. Please try again.';
   },
 
   showError(message) {
@@ -65,8 +80,30 @@ const Auth = {
     errorEl?.classList.remove('visible');
   },
 
-  login() {
-    // Stage 2 replaces this with Firebase sign-in
-    window.location.href = '/';
+  // Signs in or creates the account with Firebase (see js/firebase-login.js),
+  // then goes to Today. The server checks the token on the next page load.
+  async login(email, password) {
+    const submit = document.getElementById('auth-submit');
+
+    if (!window.calyxAuth) {
+      this.showError('Still waking things up\u2026 give it a second and try again.');
+      return;
+    }
+
+    submit.disabled = true;
+    submit.textContent = this.isSignUp ? 'Creating account\u2026' : 'Signing in\u2026';
+
+    try {
+      if (this.isSignUp) {
+        await window.calyxAuth.signUp(email, password);
+      } else {
+        await window.calyxAuth.signIn(email, password);
+      }
+      window.location.href = '/';
+    } catch (error) {
+      this.showError(this.friendlyError(error));
+      submit.disabled = false;
+      submit.textContent = this.isSignUp ? 'Create account' : 'Sign in';
+    }
   }
 };
