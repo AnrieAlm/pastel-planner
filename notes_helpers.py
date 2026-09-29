@@ -121,3 +121,157 @@ def getNotes(userId, filterName, timezoneName):
         note["meta"] = describeNote(note, today)
         noteList.append(note)
     return noteList
+
+
+
+# ---------------------------------------------------------------------------
+# Today page helpers (Stage 3b)
+# ---------------------------------------------------------------------------
+
+WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+
+
+# The person's own timezone object (falls back to Dublin if the name is not valid)
+def getZone(timezoneName):
+    try:
+        return ZoneInfo(timezoneName)
+    except Exception:
+        return ZoneInfo("Europe/Dublin")
+
+
+# The finish-by date only counts if there is a deadline and it is on or before it
+def cleanFinishBy(finishBy, deadline):
+    cleaned = cleanDate(finishBy)
+    if cleaned and deadline and cleaned <= deadline:
+        return cleaned
+    return None
+
+
+# Turns "today", "tomorrow" or a weekday name into a YYYY-MM-DD date (or None).
+# A weekday means its next occurrence, and today if it is that day already.
+def resolveWhen(when, today):
+    word = (when or "").strip().lower()
+    if word == "today":
+        return today.isoformat()
+    if word == "tomorrow":
+        return date.fromordinal(today.toordinal() + 1).isoformat()
+    if word in WEEKDAYS:
+        daysAway = (WEEKDAYS.index(word) - today.weekday()) % 7
+        return date.fromordinal(today.toordinal() + daysAway).isoformat()
+    return None
+
+
+# Notes with a date between two days (inclusive), earliest first
+def getNotesInRange(userId, startDay, endDay, includeDone=False):
+    query = {"user_id": userId, "deleted_at": None, "date": {"$gte": startDay, "$lte": endDay}}
+    if not includeDone:
+        query["done"] = False
+    return list(notes.find(query).sort([("date", 1), ("time", 1), ("created_at", 1)]))
+
+
+# Everything planned for one day. Untimed notes come after timed ones.
+def getNotesForDay(userId, day):
+    found = list(notes.find({"user_id": userId, "deleted_at": None, "date": day}))
+    found.sort(key=lambda n: (n.get("time") is None, n.get("time") or "", n["created_at"]))
+    return found
+
+
+# Unfinished notes from earlier days that have not been dealt with yet ("From yesterday")
+def getRolloverNotes(userId, today):
+    return list(notes.find({
+        "user_id": userId, "deleted_at": None, "done": False, "dismissed": False,
+        "date": {"$ne": None, "$lt": today.isoformat()},
+    }).sort([("date", 1), ("time", 1)]))
+
+
+# Notes to show under "Urgent": marked urgent, or with a deadline in the next 7 days (or past)
+def getUrgentNotes(userId, today):
+    lastDay = date.fromordinal(today.toordinal() + 7).isoformat()
+    found = list(notes.find({
+        "user_id": userId, "deleted_at": None, "done": False,
+        "$or": [{"urgent": True}, {"deadline": {"$ne": None, "$lte": lastDay}}],
+    }))
+    found.sort(key=lambda n: (n.get("deadline") is None, n.get("deadline") or ""))
+    return found
+
+
+# The next 7 days (not including today): dated notes and deadlines, in date order
+def getUpcomingNotes(userId, today):
+    first = date.fromordinal(today.toordinal() + 1).isoformat()
+    last = date.fromordinal(today.toordinal() + 7).isoformat()
+    entries = []
+    for note in getNotesInRange(userId, first, last):
+        entries.append((note["date"], note.get("time") or "", note["title"], False))
+    for note in notes.find({"user_id": userId, "deleted_at": None, "done": False,
+                            "deadline": {"$gte": first, "$lte": last}}):
+        entries.append((note["deadline"], "", note["title"], True))
+    entries.sort()
+    return entries
+
+
+# Lower-cases "Today" / "Tomorrow" / "Yesterday" so they read well mid-sentence
+def inSentence(label):
+    return label.lower() if label in ("Today", "Tomorrow", "Yesterday") else label
+
+
+# The second line of an urgent card, e.g. "Aim to finish Wed · 2 days to deadline"
+def describeUrgent(note, today):
+    parts = []
+    deadline = note.get("deadline")
+    finishBy = note.get("finish_by")
+    if finishBy and finishBy >= today.isoformat():
+        parts.append("Aim to finish " + inSentence(dayLabel(finishBy, today)))
+    if deadline:
+        daysLeft = (date.fromisoformat(deadline) - today).days
+        if daysLeft < 0:
+            parts.append("was due " + inSentence(dayLabel(deadline, today)))
+        elif daysLeft == 0:
+            parts.append("due today")
+        else:
+            parts.append(f"{daysLeft} day{'s' if daysLeft != 1 else ''} to deadline")
+    return " · ".join(parts)
+
+
+# Adds the display fields the templates use (id, time label, the details for the edit sheet)
+def decorate(note, today):
+    note["id"] = str(note["_id"])
+    note["meta"] = describeNote(note, today)
+    note["timeLabel"] = niceTime(note["time"]) if note.get("time") else "Anytime"
+    return note
+
+
+# Everything the Today page needs, in one go
+def getTodayView(user):
+    userId = user["user_id"]
+    zone = getZone(user["timezone"])
+    now = datetime.now(zone)
+    today = now.date()
+
+    if now.hour < 12:
+        subtitle = "a quiet morning"
+    elif now.hour < 18:
+        subtitle = "a gentle afternoon"
+    else:
+        subtitle = "a calm evening"
+
+    urgent = []
+    for note in getUrgentNotes(userId, today):
+        decorate(note, today)
+        note["deadlineLabel"] = ("Due " + inSentence(dayLabel(note["deadline"], today))) if note.get("deadline") else "Marked urgent"
+        note["detail"] = describeUrgent(note, today)
+        urgent.append(note)
+
+    upcoming = []
+    for day, time, title, isDeadline in getUpcomingNotes(userId, today):
+        label = dayLabel(day, today)
+        text = title + (" (deadline)" if isDeadline else (" · " + niceTime(time) if time else ""))
+        upcoming.append({"label": label, "text": text})
+
+    return {
+        "todayLabel": f"{today.strftime('%A')}, {today.day} {today.strftime('%B')}",
+        "subtitle": subtitle,
+        "urgent": urgent,
+        "rollover": [decorate(n, today) for n in getRolloverNotes(userId, today)],
+        "todayNotes": [decorate(n, today) for n in getNotesForDay(userId, today.isoformat())],
+        "upcoming": upcoming,
+    }
