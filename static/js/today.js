@@ -19,13 +19,22 @@ const Today = {
     this.initCarryOverActions();
     this.initDatePicked();
     this.initCapture();
+    this.showAddedToastIfNeeded();
   },
 
-  // Day capture — type or speak everything on your mind, Sinéad reads
-  // it and suggests how to sort it. No real AI backend exists yet, so
-  // this shows plausible mock suggestions (a light keyword guess, nothing
-  // more) rather than an actual parse — see the project's actual AI plan
-  // (Groq note-parsing) in the backend spec for what this stands in for.
+  // After the capture form sends, the server redirects to /?added=1. Say so once.
+  showAddedToastIfNeeded() {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('added')) return;
+    params.delete('added');
+    const query = params.toString();
+    history.replaceState(null, '', window.location.pathname + (query ? '?' + query : ''));
+    this.toast('Added to your day');
+  },
+
+  // Day capture: type or speak, tap "Sort my day", adjust the chips, then confirm.
+  // Confirming fills a small hidden form and sends it to the server, which saves a real note.
+  // (Sinéad's AI guesses arrive in a later stage; the chips here are a light keyword guess.)
   initCapture() {
     const input = document.getElementById('today-capture-input');
     const micBtn = document.getElementById('today-capture-mic');
@@ -101,25 +110,24 @@ const Today = {
       const text = input.value.trim();
       if (!text) return;
 
-      const urgent = document.querySelector('.suggestion-chip[data-chip="urgent"]')?.classList.contains('selected');
-      const firstLine = text.split('\n')[0].slice(0, 60);
-      this.addCapturedNote(firstLine, text, urgent);
+      const chip = (name) => document.querySelector(`.suggestion-chip[data-chip="${name}"]`);
+      const urgent = chip('urgent')?.classList.contains('selected');
+      const dateChip = chip('date');
+      // If the date chip is switched off, the note is saved without a date
+      const when = dateChip?.classList.contains('selected') ? (dateChip.dataset.when || 'today') : '';
 
-      // Reset for the next capture — clears the box, disables submit
-      // again, hides the suggestions, and puts the chips back to their
-      // default state so a leftover "urgent" selection doesn't silently
-      // carry over into whatever gets typed next
-      input.value = '';
-      input.style.height = 'auto';
-      submitBtn.disabled = true;
-      suggestions?.classList.add('hidden');
-      document.querySelectorAll('.suggestion-chip').forEach(chip => {
-        const isDefault = chip.dataset.chip !== 'urgent';
-        chip.classList.toggle('selected', isDefault);
-        chip.setAttribute('aria-pressed', String(isDefault));
-      });
+      // A short one-liner becomes just a title; longer text keeps its full content too
+      const firstLine = text.split('\n')[0].trim().slice(0, 60);
+      const isShort = !text.includes('\n') && text.length <= 60;
 
-      this.toast(urgent ? 'Added to Notes — marked urgent' : 'Added to Notes');
+      const form = document.getElementById('capture-form');
+      if (!form) return;
+      form.querySelector('[name="title"]').value = firstLine;
+      form.querySelector('[name="content"]').value = isShort ? '' : text;
+      form.querySelector('[name="when"]').value = when;
+      form.querySelector('[name="urgent"]').value = urgent ? 'on' : '';
+      confirmBtn.disabled = true;
+      form.submit();
     });
   },
 
@@ -138,41 +146,11 @@ const Today = {
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const mentionedDay = days.find(d => lower.includes(d));
     if (dateChip) {
+      dateChip.dataset.when = mentionedDay || 'today';
       dateChip.textContent = mentionedDay
         ? `📅 ${mentionedDay.charAt(0).toUpperCase() + mentionedDay.slice(1)}`
         : '📅 Today';
     }
-  },
-
-  // Adds a real .postit to the Notes page's board — the Notes page
-  // stays in the DOM even while hidden (see js/navigation.js), so this
-  // works correctly regardless of which page is currently showing.
-  // Built with textContent rather than an innerHTML template string —
-  // whatever someone types into the capture box is shown as plain text,
-  // never parsed as markup.
-  addCapturedNote(title, content, urgent) {
-    const board = document.querySelector('.postit-board');
-    if (!board) return;
-
-    const card = document.createElement('button');
-    card.type = 'button';
-    card.className = `postit colour-1${urgent ? ' urgent' : ''}`;
-    card.setAttribute('data-modal', 'edit-note');
-
-    const h = document.createElement('h4');
-    h.textContent = (urgent ? '⚑ ' : '') + title;
-    const p = document.createElement('p');
-    p.textContent = content;
-    const meta = document.createElement('span');
-    meta.className = 'note-meta';
-    meta.textContent = "From today's capture";
-    card.append(h, p, meta);
-
-    board.prepend(card);
-    card.addEventListener('click', (e) => {
-      e.stopPropagation();
-      Modals.open('edit-note', { sourceEl: card });
-    });
   },
 
   // Brief bottom-of-screen confirmation, reused for anything on this
@@ -211,35 +189,28 @@ const Today = {
     });
   },
 
-  // "From yesterday" unfinished item — Move to today / New date / Let it go
+  // "From yesterday": Move to today and Let it go are real forms the server handles.
+  // Only "Pick a new date" needs JavaScript, to open the date sheet.
   initCarryOverActions() {
-    document.querySelectorAll('.carry-over-actions button').forEach(btn => {
+    document.querySelectorAll('[data-rollover="new-date"]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const item = btn.closest('.carry-over-item');
-        const label = btn.textContent.trim();
-
-        if (label === 'Move to today') {
-          // TODO: once backend exists, this sets the note's date to today
-          this.removeWithFade(item);
-        } else if (label === 'New date') {
-          Modals.open('pick-date', { sourceEl: item });
-        } else if (label === 'Let it go') {
-          this.removeWithFade(item);
-        }
+        Modals.open('pick-date', { sourceEl: btn.closest('.carry-over-item') });
       });
     });
   },
 
-  // Fired by Modals when "Set date" is clicked inside modal-pick-date.
-  // Only acts when the modal was opened from a carry-over item (see
-  // initCarryOverActions above) — picking a new date resolves that
-  // item the same way "Move to today"/"Let it go" already do.
+  // Modals announces the chosen date. If it came from a "From yesterday" item, send it to the server.
   initDatePicked() {
     document.addEventListener('calyx:date-picked', (e) => {
-      const { sourceEl } = e.detail;
-      if (sourceEl?.classList.contains('carry-over-item')) {
-        this.removeWithFade(sourceEl);
-      }
+      const { date, sourceEl } = e.detail;
+      if (!sourceEl?.classList.contains('carry-over-item') || !date) return;
+
+      const form = document.getElementById('rollover-form');
+      if (!form) return;
+      // setAttribute, because this form has an input called "action" that hides form.action
+      form.setAttribute('action', '/rollover/' + sourceEl.dataset.noteId);
+      form.querySelector('[name="new_date"]').value = date;
+      form.submit();
     });
   },
 
