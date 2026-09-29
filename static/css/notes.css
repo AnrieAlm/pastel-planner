@@ -228,3 +228,65 @@ gap: 4px;
 
 .postit.urgent { outline: 2px dashed var(--accent-secondary); outline-offset: -2px; }
 .postit.done   { opacity: 0.6; }
+
+
+
+/* ===== Empty state (Caveat = handwritten accents only) ===== */
+.notes-empty {
+  grid-column: 1 / -1;
+  padding: var(--sp-xl) 0;
+  text-align: center;
+  font-family: var(--font-hand);
+  font-size: var(--fs-lg);
+  color: var(--text-secondary);
+}
+
+/* ===== Undo message after a delete (no "Are you sure?" pop-ups) ===== */
+.undo-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-xs) var(--sp-xs) var(--sp-xs) var(--sp-md);
+  background: var(--bg-raised);
+  color: var(--text-primary);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-lift);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  z-index: 200;
+  animation: undoIn 0.25s var(--ease-soft);
+}
+.undo-toast button {
+  min-height: 44px;
+  padding: 0 var(--sp-md);
+  border-radius: var(--radius-full);
+  background: var(--accent-primary);
+  color: var(--accent-on);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+}
+.undo-toast button:disabled { opacity: 0.6; }
+.undo-toast button:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
+@keyframes undoIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+@media (min-width: 900px) {
+  .undo-toast { bottom: var(--sp-lg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .undo-toast { animation: none; }
+}
+
+
+
+
+
