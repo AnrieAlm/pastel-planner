@@ -33,6 +33,19 @@
   <label for="note-deadline">Deadline</label>
   <input type="date" id="note-deadline" name="deadline" />
 
+  
+  <div class="finish-by-block" hidden>
+    <label>When do you want to have it done?</label>
+    <div class="suggestion-chips" role="group" aria-label="Quick choices for the finish-by date">
+      <button type="button" class="suggestion-chip finish-chip" data-days="1">1 day before</button>
+      <button type="button" class="suggestion-chip finish-chip" data-days="3">3 days before</button>
+      <button type="button" class="suggestion-chip finish-chip" data-days="7">1 week before</button>
+      <button type="button" class="suggestion-chip finish-chip" data-days="custom">Custom</button>
+    </div>
+    <label for="note-finish-by">Aim to finish by</label>
+    <input type="date" id="note-finish-by" name="finish_by" />
+  </div>
+
   <div class="modal-actions">
     <button type="button" class="btn-modal-secondary" data-note-action="gcal">📅 Google Calendar</button>
     <button type="button" class="btn-modal-secondary" data-note-action="ics">⬇ Download .ics</button>
