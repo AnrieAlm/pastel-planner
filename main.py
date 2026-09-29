@@ -13,8 +13,9 @@ from fastapi.templating import Jinja2Templates
 
 from auth import checkRequest
 from db import createIndexes, notes
-from notes_helpers import (FILTERS, CONTENT_MAX, TITLE_MAX, cleanColor, cleanDate, cleanText,
-                           cleanTime, getNotes, toObjectId)
+from notes_helpers import (FILTERS, CONTENT_MAX, TITLE_MAX, cleanColor, cleanDate, cleanFinishBy,
+                           cleanText, cleanTime, getNotes, getToday, getTodayView, resolveWhen,
+                           toObjectId)
 
 
 # Runs once when the server starts: makes sure the database indexes exist
@@ -88,13 +89,13 @@ def loginPage(request: Request):
     return renderPage(request, "login.html", "login", {"reason": reason})
 
 
-# Today
+# Today: real notes for urgent items, "From yesterday", today's list and the next 7 days
 @app.get("/", response_class=HTMLResponse)
 def todayPage(request: Request):
     user, redirect = getUserOrRedirect(request)
     if redirect:
         return redirect
-    return renderPage(request, "today.html", "today", {"user": user})
+    return renderPage(request, "today.html", "today", {"user": user, **getTodayView(user)})
 
 
 # Routine
@@ -178,18 +179,22 @@ def apiMe(request: Request):
 # ---------- Note actions (forms). Each one checks the login first, only touches
 # ---------- notes with THIS user's user_id, then redirects back with status 302.
 
-# Add a note (from the "New note" sheet)
+# Add a note (from the "New note" sheet or the Today capture box)
 @app.post("/add-note")
 def addNote(request: Request, title: str = Form(""), content: str = Form(""),
             color: str = Form("1"), urgent: str = Form(""), date: str = Form(""),
-            time: str = Form(""), deadline: str = Form(""), nextUrl: str = Form("/notes", alias="next")):
+            time: str = Form(""), deadline: str = Form(""), finishBy: str = Form("", alias="finish_by"),
+            when: str = Form(""), nextUrl: str = Form("/notes", alias="next")):
     user, redirect = getUserOrRedirect(request)
     if redirect:
         return redirect
 
     cleanTitle = cleanText(title, TITLE_MAX)
     if cleanTitle:
-        noteDate = cleanDate(date)
+        # The capture box sends "today" or a weekday name instead of an exact date;
+        # we turn it into a date using the person's own timezone
+        noteDate = cleanDate(date) or resolveWhen(when, getToday(user["timezone"]))
+        noteDeadline = cleanDate(deadline)
         notes.insert_one({
             "user_id": user["user_id"],
             "title": cleanTitle,
@@ -200,8 +205,8 @@ def addNote(request: Request, title: str = Form(""), content: str = Form(""),
             "time": cleanTime(time) if noteDate else None,
             "bucket": None,
             "link": None,
-            "deadline": cleanDate(deadline),
-            "finish_by": None,
+            "deadline": noteDeadline,
+            "finish_by": cleanFinishBy(finishBy, noteDeadline),
             "urgent": urgent == "on",
             "reminder_at": None,
             "reminder_sent": False,
@@ -217,7 +222,8 @@ def addNote(request: Request, title: str = Form(""), content: str = Form(""),
 @app.post("/update-note/{noteId}")
 def updateNote(noteId: str, request: Request, title: str = Form(""), content: str = Form(""),
                color: str = Form("1"), urgent: str = Form(""), date: str = Form(""),
-               time: str = Form(""), deadline: str = Form(""), nextUrl: str = Form("/notes", alias="next")):
+               time: str = Form(""), deadline: str = Form(""), finishBy: str = Form("", alias="finish_by"),
+               nextUrl: str = Form("/notes", alias="next")):
     user, redirect = getUserOrRedirect(request)
     if redirect:
         return redirect
@@ -225,13 +231,15 @@ def updateNote(noteId: str, request: Request, title: str = Form(""), content: st
     objectId = toObjectId(noteId)
     if objectId is not None:
         noteDate = cleanDate(date)
+        noteDeadline = cleanDate(deadline)
         changes = {
             "content": cleanText(content, CONTENT_MAX),
             "color": cleanColor(color),
             "urgent": urgent == "on",
             "date": noteDate,
             "time": cleanTime(time) if noteDate else None,
-            "deadline": cleanDate(deadline),
+            "deadline": noteDeadline,
+            "finish_by": cleanFinishBy(finishBy, noteDeadline),
         }
         # An empty title is ignored, so a note never ends up with no name
         cleanTitle = cleanText(title, TITLE_MAX)
@@ -276,6 +284,30 @@ def toggleDone(noteId: str, request: Request, nextUrl: str = Form("/notes", alia
                              {"$set": {"done": nowDone,
                                        "completed_at": datetime.now(timezone.utc) if nowDone else None}})
     return RedirectResponse(safeNext(nextUrl), status_code=302)
+
+
+# "From yesterday" choices: move an unfinished note to today, give it a new date, or let it go
+@app.post("/rollover/{noteId}")
+def rolloverNote(noteId: str, request: Request, action: str = Form(""),
+                 newDate: str = Form("", alias="new_date"), nextUrl: str = Form("/", alias="next")):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    objectId = toObjectId(noteId)
+    changes = None
+    if action == "today":
+        changes = {"date": getToday(user["timezone"]).isoformat(), "dismissed": False}
+    elif action == "new-date" and cleanDate(newDate):
+        changes = {"date": cleanDate(newDate), "dismissed": False}
+    elif action == "let-go":
+        # Not deleted: the note stays in Notes, it just stops appearing under "From yesterday"
+        changes = {"dismissed": True}
+
+    if objectId is not None and changes:
+        notes.update_one({"_id": objectId, "user_id": user["user_id"], "deleted_at": None},
+                         {"$set": changes})
+    return RedirectResponse(safeNext(nextUrl, "/"), status_code=302)
 
 
 # JSON route used by the Undo button (fetch). Answers 401 if not logged in.
