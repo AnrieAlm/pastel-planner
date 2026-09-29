@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/_note_data.html" import noteData %}
 {% block title %}Today{% endblock %}
 
 {# The page itself. The section id keeps the page CSS working. #}
@@ -7,15 +8,13 @@
     <div class="today-header">
       <div>
         <h2>Today</h2>
-        <span class="today-date">Wednesday, 24 September</span>
+        <span class="today-date">{{ todayLabel }}</span>
       </div>
-      <span class="today-subtitle">a quiet morning</span>
+      <span class="today-subtitle">{{ subtitle }}</span>
     </div>
 
-    <!-- Day capture — speak or type everything on your mind; Sinéad reads
-         this to organise the rest of the day. AI parsing isn't wired to a
-         real backend yet, so submitting shows mock suggestion chips rather
-         than an actual parse. -->
+    {# Day capture: type or speak, then confirm the chips. Adding saves a real note.
+       (Sinéad's AI guesses arrive in a later stage; for now the chips are simple.) #}
     <div class="today-capture">
       <h3>What's on your mind?</h3>
       <p class="capture-hint">Tell Sinéad about your day, type or speak.</p>
@@ -32,10 +31,19 @@
         </div>
       </div>
 
+      {# The confirm button fills this hidden form and sends it to /add-note #}
+      <form method="post" action="/add-note" id="capture-form" hidden>
+        <input type="hidden" name="title" />
+        <input type="hidden" name="content" />
+        <input type="hidden" name="when" />
+        <input type="hidden" name="urgent" />
+        <input type="hidden" name="next" value="/?added=1" />
+      </form>
+
       <div class="capture-suggestions hidden" id="today-capture-suggestions" aria-live="polite">
         <p class="suggestions-label">Sinéad's guesses — tap to adjust, then confirm</p>
         <div class="suggestion-chips" role="group" aria-label="Adjust Sinéad's suggestions">
-          <button type="button" class="suggestion-chip selected" data-chip="date" aria-pressed="true">📅 Today</button>
+          <button type="button" class="suggestion-chip selected" data-chip="date" data-when="today" aria-pressed="true">📅 Today</button>
           <button type="button" class="suggestion-chip selected" data-chip="category" aria-pressed="true">🏷️ Note</button>
           <button type="button" class="suggestion-chip" data-chip="urgent" aria-pressed="false">⚑ Mark urgent</button>
         </div>
@@ -43,14 +51,18 @@
       </div>
     </div>
 
-    <!-- Urgent -->
+    {# Urgent: marked urgent, or a deadline within a week #}
+    {% if urgent %}
     <div class="today-urgent">
       <h3>Urgent</h3>
-      <div class="urgent-card">
-        ⚑ <strong>Due Fri</strong> — MSc thesis methodology chapter<br />
-        Aim to finish today · 2 days to deadline
-      </div>
+      {% for note in urgent %}
+      <button type="button" class="urgent-card" {{ noteData(note) }}>
+        ⚑ <strong>{{ note.deadlineLabel }}</strong> — {{ note.title }}{% if note.detail %}<br />
+        {{ note.detail }}{% endif %}
+      </button>
+      {% endfor %}
     </div>
+    {% endif %}
 
     <!-- Sinéad AI nudge — compact, notification-style rather than a big
          banner, so it doesn't compete with the capture box and Urgent
@@ -94,34 +106,55 @@
       </div>
     </div>
 
-    <!-- Carry-over from yesterday -->
+    {# From yesterday: unfinished notes from earlier days #}
+    {% if rollover %}
     <div class="carry-over">
       <h3>From yesterday</h3>
-      <div class="carry-over-item">
-        <span>Book dentist appointment</span>
+      {% for note in rollover %}
+      <div class="carry-over-item" data-note-id="{{ note.id }}">
+        <span>{{ note.title }}</span>
         <div class="carry-over-actions">
-          <button>Move to today</button>
-          <button>New date</button>
-          <button>Let it go</button>
+          <form method="post" action="/rollover/{{ note.id }}">
+            <input type="hidden" name="action" value="today" />
+            <input type="hidden" name="next" value="/" />
+            <button type="submit">Move to today</button>
+          </form>
+          <button type="button" data-rollover="new-date">Pick a new date</button>
+          <form method="post" action="/rollover/{{ note.id }}">
+            <input type="hidden" name="action" value="let-go" />
+            <input type="hidden" name="next" value="/" />
+            <button type="submit">Let it go</button>
+          </form>
         </div>
       </div>
+      {% endfor %}
+      {# Used by "Pick a new date": JavaScript fills it in and sends it #}
+      <form method="post" id="rollover-form" hidden>
+        <input type="hidden" name="action" value="new-date" />
+        <input type="hidden" name="new_date" />
+        <input type="hidden" name="next" value="/" />
+      </form>
     </div>
+    {% endif %}
 
-    <!-- Schedule -->
+    {# Today: what is planned for today, timed things first #}
     <div class="today-urgent">
       <h3>Today</h3>
-      <div class="schedule-item">
-        <span class="schedule-time">9:00 am</span>
-        <span>Griffith lecture — RAG systems ✓</span>
+      {% for note in todayNotes %}
+      <div class="schedule-item{% if note.done %} done{% endif %}">
+        <form method="post" action="/toggle-done/{{ note.id }}" class="schedule-tick">
+          <input type="hidden" name="next" value="/" />
+          <button type="submit" class="tick-btn" aria-pressed="{{ 'true' if note.done else 'false' }}"
+                  aria-label="{{ 'Mark not done' if note.done else 'Mark done' }}: {{ note.title }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M6 12.5l4 4 8-9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </form>
+        <span class="schedule-time">{{ note.timeLabel }}</span>
+        <button type="button" class="schedule-title" {{ noteData(note) }}>{{ note.title }}</button>
       </div>
-      <div class="schedule-item">
-        <span class="schedule-time">12:00 pm</span>
-        <span>📅 Lunch with Esgi — Café on George's St</span>
-      </div>
-      <div class="schedule-item">
-        <span class="schedule-time">7:00 pm</span>
-        <span>🎬 Movie night with Boris</span>
-      </div>
+      {% else %}
+      <p class="today-empty">Nothing planned for today. A lovely blank space.</p>
+      {% endfor %}
     </div>
 
     <!-- Habits mini -->
@@ -131,14 +164,15 @@
       <span class="habit-chip">📓 Journal ✓ Done today</span>
     </div>
 
-    <!-- Coming up -->
+    {# Coming up: the next 7 days #}
     <div class="coming-up">
       <h3>Coming up</h3>
       <ul>
-        <li><strong>Tomorrow</strong> — Griffith lecture — 10am</li>
-        <li><strong>Sat 27</strong> — Farmers market</li>
-        <li><strong>Mon 29</strong> — Thesis deadline</li>
-        <li><strong>Oct 9</strong> — Darren's birthday — 15 days</li>
+        {% for item in upcoming %}
+        <li><strong>{{ item.label }}</strong> — {{ item.text }}</li>
+        {% else %}
+        <li>Nothing in the next week.</li>
+        {% endfor %}
       </ul>
     </div>
 
