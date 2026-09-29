@@ -1,0 +1,16 @@
+# Secrets: never commit these
+.env
+*.env
+serviceAccount*.json
+*-firebase-adminsdk-*.json
+
+# Python clutter
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Editor / OS clutter
+.DS_Store
+.vscode/
+.idea/
