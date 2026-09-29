@@ -35,7 +35,8 @@
               data-done="{{ 'true' if note.done else 'false' }}"
               data-date="{{ note.date or '' }}"
               data-time="{{ note.time or '' }}"
-              data-deadline="{{ note.deadline or '' }}">
+              data-deadline="{{ note.deadline or '' }}"
+              data-finish-by="{{ note.finish_by or '' }}">
         <h4>{% if note.done %}✓ {% elif note.urgent %}⚑ {% endif %}{{ note.title }}</h4>
         {% if note.content %}<p>{{ note.content }}</p>{% endif %}
         <span class="note-meta">{{ note.meta }}</span>
