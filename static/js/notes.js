@@ -1,190 +1,186 @@
 /**
  * Calyx Planner — Notes Page
+ * The server draws the notes from MongoDB and saves changes through forms.
+ * This file only does the small things a form can't: fill the edit sheet,
+ * switch filters, show the Undo message, and build calendar links.
  */
 const Notes = {
   init() {
     this.initFilters();
     this.initNoteCards();
-    this.initModalActions();
-
-    document.querySelectorAll('[data-modal="new-note"]').forEach(btn => {
-      btn.addEventListener('click', () => Modals.open('new-note'));
-    });
+    this.initForms();
+    this.showUndoIfNeeded();
+    this.initCalendarButtons();
   },
 
+  // Filter chips reload the page with ?filter=... (the server does the filtering)
   initFilters() {
     document.querySelectorAll('.notes-filters button').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.notes-filters button').forEach(b => {
-          b.classList.remove('active');
-          b.setAttribute('aria-pressed', 'false');
-        });
-        btn.classList.add('active');
-        btn.setAttribute('aria-pressed', 'true');
-        // TODO: once notes come from real data, filter the list here
-        // based on btn.textContent (All / Undated / Dated / Urgent / Done)
+        const filter = btn.dataset.filter;
+        window.location.href = filter === 'all' ? '/notes' : '/notes?filter=' + filter;
       });
     });
   },
 
-  // Notes were restyled from .note-card to .postit at some point and
-  // this selector never got updated — it was a silent no-op (the
-  // generic [data-modal] delegation in Modals.js still opened the
-  // modal, just with no data), which is why nothing looked broken.
-  // Fixed to the real class, and now passes sourceEl so Save/Delete
-  // can act on the exact card that was opened.
+  // Clicking a post-it opens the edit sheet, then fills it with that note's details
   initNoteCards() {
-    document.querySelectorAll('.postit[data-modal="edit-note"]').forEach(card => {
-      card.addEventListener('click', (e) => {
+    document.querySelectorAll('.postit[data-note-id]').forEach(card => {
+      card.addEventListener('click', async (e) => {
         e.stopPropagation();
-        Modals.open('edit-note', { sourceEl: card });
+        await Modals.open('edit-note', { sourceEl: card });
+        this.fillEditForm(card);
       });
     });
   },
 
-  initModalActions() {
+  // Puts the note's details into the edit sheet and points its buttons at this note
+  fillEditForm(card) {
+    const form = document.getElementById('edit-note-form');
+    if (!form) return;
+    const note = card.dataset;
+
+    form.action = '/update-note/' + note.noteId;
+    document.getElementById('note-title').value = note.title;
+    document.getElementById('note-content').value = note.content;
+    document.getElementById('note-urgent').checked = note.urgent === 'true';
+    document.getElementById('note-date').value = note.date;
+    document.getElementById('note-time').value = note.time;
+    document.getElementById('note-deadline').value = note.deadline;
+
+    const dot = form.querySelector('.colour-dot.colour-' + note.color);
+    if (dot) Modals.selectColourDot(dot);
+
+    // Mark done / Delete are submit buttons that post to their own address
+    const doneBtn = document.getElementById('note-done-btn');
+    doneBtn.setAttribute('formaction', '/toggle-done/' + note.noteId);
+    doneBtn.textContent = note.done === 'true' ? 'Mark not done' : 'Mark done';
+    document.getElementById('note-delete-btn').setAttribute('formaction', '/delete-note/' + note.noteId);
+  },
+
+  // Just before a note form is sent, copy in the chosen colour and the page to come back to
+  initForms() {
+    document.addEventListener('submit', (e) => {
+      const form = e.target.closest('#edit-note-form, #new-note-form');
+      if (!form) return;
+
+      const chosen = form.querySelector('.colour-dot.selected');
+      const colour = chosen?.className.match(/colour-(\d)/)?.[1] || '1';
+      form.querySelector('input[name="color"]').value = colour;
+
+      // Come back to the same page and filter (without an old ?deleted=... in it)
+      const params = new URLSearchParams(window.location.search);
+      params.delete('deleted');
+      const query = params.toString();
+      form.querySelector('input[name="next"]').value =
+        window.location.pathname + (query ? '?' + query : '');
+    });
+  },
+
+  // After a delete the server redirects with ?deleted=<id>. Show the Undo message once.
+  showUndoIfNeeded() {
+    const params = new URLSearchParams(window.location.search);
+    const noteId = params.get('deleted');
+    if (!noteId) return;
+
+    params.delete('deleted');
+    const query = params.toString();
+    history.replaceState(null, '', window.location.pathname + (query ? '?' + query : ''));
+    this.showUndoToast(noteId);
+  },
+
+  showUndoToast(noteId) {
+    const toast = document.createElement('div');
+    toast.className = 'undo-toast';
+    toast.setAttribute('role', 'status');
+    toast.innerHTML = '<span>Note deleted.</span><button type="button">Undo</button>';
+    document.body.appendChild(toast);
+
+    const undoBtn = toast.querySelector('button');
+    undoBtn.addEventListener('click', async () => {
+      undoBtn.disabled = true;
+      try {
+        const res = await fetch('/api/undo-delete/' + encodeURIComponent(noteId), { method: 'POST' });
+        if (!res.ok) throw new Error('undo failed');
+        window.location.reload();
+      } catch (err) {
+        toast.querySelector('span').textContent = 'Couldn\u2019t bring it back \u2014 it may already be gone.';
+        undoBtn.remove();
+      }
+    });
+
+    setTimeout(() => toast.remove(), 8000);
+  },
+
+  // The two calendar buttons inside the edit sheet
+  initCalendarButtons() {
     document.addEventListener('click', (e) => {
-      const gcalBtn = e.target.closest('#modal-content .btn-modal-secondary');
-      const saveBtn = e.target.closest('#modal-content .btn-modal-primary');
-      const deleteBtn = e.target.closest('#modal-content .btn-modal-danger');
-
-      // Google Calendar / download .ics — only meaningful inside
-      // edit-note, identified by note-title existing in the modal
-      if (gcalBtn && document.getElementById('note-title')) {
-        if (gcalBtn.textContent.includes('Google Calendar')) {
-          this.openGoogleCalendarLink();
-        } else if (gcalBtn.textContent.includes('.ics')) {
-          this.downloadIcs();
-        }
-        return; // secondary actions don't close the modal
-      }
-
-      if (!saveBtn && !deleteBtn) return;
-
-      // edit-note modal
-      if (document.getElementById('note-title') && document.getElementById('note-content')) {
-        const card = Modals.currentData?.sourceEl;
-        if (!card) return;
-
-        if (saveBtn) {
-          this.applyNoteFieldsToCard(card, {
-            title: document.getElementById('note-title')?.value,
-            content: document.getElementById('note-content')?.value,
-            urgent: document.getElementById('note-urgent')?.checked,
-            colourBtn: document.querySelector('#modal-content .colour-dot.selected')
-          });
-        } else if (deleteBtn) {
-          card.remove();
-        }
-        Modals.close();
-        return;
-      }
-
-      // new-note modal
-      if (saveBtn && document.getElementById('new-note-title')) {
-        this.createNote();
-        Modals.close();
-      }
+      const btn = e.target.closest('#edit-note-form [data-note-action]');
+      if (!btn) return;
+      if (btn.dataset.noteAction === 'gcal') this.openGoogleCalendarLink();
+      if (btn.dataset.noteAction === 'ics') this.downloadIcs();
     });
   },
 
-  // Shared by Save (edit-note) and Add (new-note) — writes form values
-  // onto a .postit card's h4/p/note-meta/urgent/colour-N.
-  applyNoteFieldsToCard(card, { title, content, urgent, colourBtn, dateStr }) {
-    const titleEl = card.querySelector('h4');
-    const contentEl = card.querySelector('p');
-    const metaEl = card.querySelector('.note-meta');
+  // Reads the date/time boxes in the edit sheet. With a time it is a 30-minute event,
+  // with only a date it is an all-day event.
+  getEventTimes() {
+    const date = document.getElementById('note-date')?.value;
+    const time = document.getElementById('note-time')?.value;
+    if (!date) return null;
 
-    if (titleEl && title?.trim()) titleEl.textContent = (urgent ? '⚑ ' : '') + title.trim();
-    if (contentEl && content !== undefined) contentEl.textContent = content?.trim() || '';
-    if (metaEl && dateStr) metaEl.textContent = dateStr;
-
-    card.classList.toggle('urgent', !!urgent);
-
-    if (colourBtn) {
-      card.className = card.className.replace(/colour-\d/, '').trim();
-      const colourMatch = colourBtn.className.match(/colour-\d/);
-      if (colourMatch) card.classList.add(colourMatch[0]);
-    }
-  },
-
-  createNote() {
-    const title = document.getElementById('new-note-title')?.value?.trim();
-    if (!title) return; // nothing to add without at least a title
-
-    const content = document.getElementById('new-note-content')?.value?.trim() || '';
-    const urgent = document.getElementById('new-note-urgent')?.checked;
-    const datetime = document.getElementById('new-note-datetime')?.value;
-    const colourBtn = document.querySelector('#modal-content .colour-dot.selected');
-    const colourClass = colourBtn?.className.match(/colour-\d/)?.[0] || 'colour-1';
-
-    let dateStr = 'Undated';
-    if (datetime) {
-      const d = new Date(datetime);
-      dateStr = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) +
-        ' · ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    if (!time) {
+      const [y, m, d] = date.split('-').map(Number);
+      const next = new Date(y, m - 1, d + 1);
+      const pad = (n) => String(n).padStart(2, '0');
+      return {
+        allDay: true,
+        start: date.replaceAll('-', ''),
+        end: `${next.getFullYear()}${pad(next.getMonth() + 1)}${pad(next.getDate())}`
+      };
     }
 
-    const card = document.createElement('button');
-    card.type = 'button';
-    card.className = `postit ${colourClass}${urgent ? ' urgent' : ''}`;
-    card.setAttribute('data-modal', 'edit-note');
-    card.innerHTML = `
-      <h4>${urgent ? '⚑ ' : ''}${title}</h4>
-      <p>${content}</p>
-      <span class="note-meta">${dateStr}</span>
-    `;
-
-    document.querySelector('.postit-board')?.prepend(card);
-    card.addEventListener('click', (e) => {
-      e.stopPropagation();
-      Modals.open('edit-note', { sourceEl: card });
-    });
+    const start = new Date(`${date}T${time}`);
+    const end = new Date(start.getTime() + 30 * 60000);
+    const fmt = (dt) => dt.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    return { allDay: false, start: fmt(start), end: fmt(end) };
   },
 
-  // Builds a real, working Google Calendar "quick add event" link from
-  // the currently-open edit-note modal's title/date fields and opens
-  // it in a new tab — no backend needed, Google Calendar accepts this
-  // URL format directly.
+  // Google Calendar "quick add" link, opened in a new tab
   openGoogleCalendarLink() {
     const title = document.getElementById('note-title')?.value?.trim() || 'Note';
-    const datetime = document.getElementById('note-datetime')?.value;
     const details = document.getElementById('note-content')?.value?.trim() || '';
-
-    let datesParam = '';
-    if (datetime) {
-      const start = new Date(datetime);
-      const end = new Date(start.getTime() + 30 * 60000); // default 30 min
-      const fmt = (d) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-      datesParam = `&dates=${fmt(start)}/${fmt(end)}`;
-    }
+    const times = this.getEventTimes();
+    const datesParam = times ? `&dates=${times.start}/${times.end}` : '';
 
     const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}${datesParam}&details=${encodeURIComponent(details)}`;
     window.open(url, '_blank');
   },
 
-  // Builds a minimal, valid .ics file client-side and triggers a real
-  // download — no backend needed, this is a plain text format.
+  // A plain-text .ics calendar file with a 15-minute reminder, downloaded straight away
   downloadIcs() {
     const title = document.getElementById('note-title')?.value?.trim() || 'Note';
-    const datetime = document.getElementById('note-datetime')?.value;
     const details = document.getElementById('note-content')?.value?.trim() || '';
+    const times = this.getEventTimes();
+    const escapeText = (text) => text.replace(/([,;\\])/g, '\\$1').replace(/\n/g, '\\n');
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
-    const start = datetime ? new Date(datetime) : new Date();
-    const end = new Date(start.getTime() + 30 * 60000);
-    const fmt = (d) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const startLine = !times ? `DTSTART;VALUE=DATE:${stamp.slice(0, 8)}`
+      : times.allDay ? `DTSTART;VALUE=DATE:${times.start}` : `DTSTART:${times.start}`;
+    const endLine = !times ? null
+      : times.allDay ? `DTEND;VALUE=DATE:${times.end}` : `DTEND:${times.end}`;
 
     const ics = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
       'PRODID:-//Calyx Planner//EN',
       'BEGIN:VEVENT',
-      `UID:${Date.now()}@petalplanner`,
-      `DTSTAMP:${fmt(new Date())}`,
-      `DTSTART:${fmt(start)}`,
-      `DTEND:${fmt(end)}`,
-      `SUMMARY:${title}`,
-      `DESCRIPTION:${details.replace(/\n/g, '\\n')}`,
+      `UID:${Date.now()}@calyxplanner`,
+      `DTSTAMP:${stamp}`,
+      startLine,
+      ...(endLine ? [endLine] : []),
+      `SUMMARY:${escapeText(title)}`,
+      `DESCRIPTION:${escapeText(details)}`,
       'BEGIN:VALARM',
       'ACTION:DISPLAY',
       'TRIGGER:-PT15M',
