@@ -1,16 +1,20 @@
-# Calyx Planner - Stage 1: every page is served by FastAPI + Jinja2 with mock data.
-# No login or database yet; those arrive in Stage 2.
+# Calyx Planner - main.py: all the routes (web addresses) of the app.
+# Pages are drawn by Jinja2 templates; every route checks the login first.
 
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+from urllib.parse import parse_qsl, urlencode, urlsplit
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from auth import checkRequest
-from db import createIndexes
+from db import createIndexes, notes
+from notes_helpers import (FILTERS, CONTENT_MAX, TITLE_MAX, cleanColor, cleanDate, cleanText,
+                           cleanTime, getNotes, toObjectId)
 
 
 # Runs once when the server starts: makes sure the database indexes exist
@@ -59,6 +63,21 @@ def getUserOrRedirect(request: Request):
     return None, RedirectResponse("/login", status_code=302)
 
 
+# Only allow redirects to pages on our own site (stops "open redirect" tricks)
+def safeNext(value, fallback="/notes"):
+    if not value.startswith("/") or value.startswith("//") or "\\" in value:
+        return fallback
+    return value
+
+
+# Adds ?key=value to a web address, replacing that key if it is already there
+def withParam(url, key, value):
+    parts = urlsplit(url)
+    query = dict(parse_qsl(parts.query))
+    query[key] = value
+    return parts.path + "?" + urlencode(query)
+
+
 # Login page. Someone who is already logged in is sent straight to Today.
 @app.get("/login", response_class=HTMLResponse)
 def loginPage(request: Request):
@@ -87,13 +106,18 @@ def routinePage(request: Request):
     return renderPage(request, "routine.html", "routine", {"user": user})
 
 
-# Notes
+# Notes page: shows this person's real notes, filtered by the chip they picked
 @app.get("/notes", response_class=HTMLResponse)
 def notesPage(request: Request):
     user, redirect = getUserOrRedirect(request)
     if redirect:
         return redirect
-    return renderPage(request, "notes.html", "notes", {"user": user})
+    activeFilter = request.query_params.get("filter", "all")
+    if activeFilter not in FILTERS:
+        activeFilter = "all"
+    noteList = getNotes(user["user_id"], activeFilter, user["timezone"])
+    return renderPage(request, "notes.html", "notes",
+                      {"user": user, "notes": noteList, "activeFilter": activeFilter})
 
 
 # Calendar
@@ -149,6 +173,126 @@ def apiMe(request: Request):
     if status != "ok":
         return JSONResponse({"error": "not logged in"}, status_code=401)
     return {"user_id": user["user_id"], "name": user["name"], "timezone": user["timezone"]}
+
+
+# ---------- Note actions (forms). Each one checks the login first, only touches
+# ---------- notes with THIS user's user_id, then redirects back with status 302.
+
+# Add a note (from the "New note" sheet)
+@app.post("/add-note")
+def addNote(request: Request, title: str = Form(""), content: str = Form(""),
+            color: str = Form("1"), urgent: str = Form(""), date: str = Form(""),
+            time: str = Form(""), deadline: str = Form(""), nextUrl: str = Form("/notes", alias="next")):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    cleanTitle = cleanText(title, TITLE_MAX)
+    if cleanTitle:
+        noteDate = cleanDate(date)
+        notes.insert_one({
+            "user_id": user["user_id"],
+            "title": cleanTitle,
+            "content": cleanText(content, CONTENT_MAX),
+            "color": cleanColor(color),
+            "created_at": datetime.now(timezone.utc),
+            "date": noteDate,
+            "time": cleanTime(time) if noteDate else None,
+            "bucket": None,
+            "link": None,
+            "deadline": cleanDate(deadline),
+            "finish_by": None,
+            "urgent": urgent == "on",
+            "reminder_at": None,
+            "reminder_sent": False,
+            "done": False,
+            "completed_at": None,
+            "dismissed": False,
+            "deleted_at": None,
+        })
+    return RedirectResponse(safeNext(nextUrl), status_code=302)
+
+
+# Save changes to a note (from the "Edit note" sheet)
+@app.post("/update-note/{noteId}")
+def updateNote(noteId: str, request: Request, title: str = Form(""), content: str = Form(""),
+               color: str = Form("1"), urgent: str = Form(""), date: str = Form(""),
+               time: str = Form(""), deadline: str = Form(""), nextUrl: str = Form("/notes", alias="next")):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    objectId = toObjectId(noteId)
+    if objectId is not None:
+        noteDate = cleanDate(date)
+        changes = {
+            "content": cleanText(content, CONTENT_MAX),
+            "color": cleanColor(color),
+            "urgent": urgent == "on",
+            "date": noteDate,
+            "time": cleanTime(time) if noteDate else None,
+            "deadline": cleanDate(deadline),
+        }
+        # An empty title is ignored, so a note never ends up with no name
+        cleanTitle = cleanText(title, TITLE_MAX)
+        if cleanTitle:
+            changes["title"] = cleanTitle
+        notes.update_one({"_id": objectId, "user_id": user["user_id"], "deleted_at": None},
+                         {"$set": changes})
+    return RedirectResponse(safeNext(nextUrl), status_code=302)
+
+
+# Delete = set deleted_at (not a real delete) so Undo can bring the note back
+@app.post("/delete-note/{noteId}")
+def deleteNote(noteId: str, request: Request, nextUrl: str = Form("/notes", alias="next")):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    objectId = toObjectId(noteId)
+    if objectId is None:
+        return RedirectResponse(safeNext(nextUrl), status_code=302)
+    result = notes.update_one({"_id": objectId, "user_id": user["user_id"], "deleted_at": None},
+                              {"$set": {"deleted_at": datetime.now(timezone.utc)}})
+    if result.matched_count:
+        # ?deleted=<id> makes the page show the "Undo" message
+        return RedirectResponse(withParam(safeNext(nextUrl), "deleted", noteId), status_code=302)
+    return RedirectResponse(safeNext(nextUrl), status_code=302)
+
+
+# Tick a note done, or un-tick it. completed_at is saved so we know when it was finished.
+@app.post("/toggle-done/{noteId}")
+def toggleDone(noteId: str, request: Request, nextUrl: str = Form("/notes", alias="next")):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    objectId = toObjectId(noteId)
+    if objectId is not None:
+        note = notes.find_one({"_id": objectId, "user_id": user["user_id"], "deleted_at": None})
+        if note:
+            nowDone = not note.get("done", False)
+            notes.update_one({"_id": objectId, "user_id": user["user_id"]},
+                             {"$set": {"done": nowDone,
+                                       "completed_at": datetime.now(timezone.utc) if nowDone else None}})
+    return RedirectResponse(safeNext(nextUrl), status_code=302)
+
+
+# JSON route used by the Undo button (fetch). Answers 401 if not logged in.
+@app.post("/api/undo-delete/{noteId}")
+def apiUndoDelete(noteId: str, request: Request):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+
+    objectId = toObjectId(noteId)
+    if objectId is None:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    result = notes.update_one({"_id": objectId, "user_id": user["user_id"], "deleted_at": {"$ne": None}},
+                              {"$set": {"deleted_at": None}})
+    if not result.matched_count:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    return {"ok": True}
 
 
 # Health check: handy for testing the server is up
