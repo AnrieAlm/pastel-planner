@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Today{% endblock %}
+
+{# The page itself. The section id keeps the page CSS working. #}
+{% block content %}
+<section id="page-today" class="page active">
+    <div class="today-header">
+      <div>
+        <h2>Today</h2>
+        <span class="today-date">Wednesday, 24 September</span>
+      </div>
+      <span class="today-subtitle">a quiet morning</span>
+    </div>
+
+    <!-- Day capture — speak or type everything on your mind; Sinéad reads
+         this to organise the rest of the day. AI parsing isn't wired to a
+         real backend yet, so submitting shows mock suggestion chips rather
+         than an actual parse. -->
+    <div class="today-capture">
+      <h3>What's on your mind?</h3>
+      <p class="capture-hint">Tell Sinéad about your day — type or speak, as much as you want.</p>
+      <div class="capture-input-row">
+        <textarea id="today-capture-input" placeholder="e.g. Dentist at 2pm, need to finish the thesis intro, don't forget Mum's birthday is Friday…"></textarea>
+        <button type="button" class="capture-mic-btn" id="today-capture-mic" aria-label="Speak instead of typing" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" stroke-width="1.5"/><path d="M5 11a7 7 0 0 0 14 0" stroke-width="1.5" stroke-linecap="square"/><path d="M12 18v3M9 21h6" stroke-width="1.5" stroke-linecap="square"/></svg>
+        </button>
+      </div>
+      <div class="capture-footer">
+        <span class="capture-mic-status hidden" id="today-capture-mic-status" role="status"></span>
+        <button type="button" class="btn-capture-submit" id="today-capture-submit" disabled>Sort my day</button>
+      </div>
+
+      <div class="capture-suggestions hidden" id="today-capture-suggestions" aria-live="polite">
+        <p class="suggestions-label">Sinéad's guesses — tap to adjust, then confirm</p>
+        <div class="suggestion-chips" role="group" aria-label="Adjust Sinéad's suggestions">
+          <button type="button" class="suggestion-chip selected" data-chip="date" aria-pressed="true">📅 Today</button>
+          <button type="button" class="suggestion-chip selected" data-chip="category" aria-pressed="true">🏷️ Note</button>
+          <button type="button" class="suggestion-chip" data-chip="urgent" aria-pressed="false">⚑ Mark urgent</button>
+        </div>
+        <button type="button" class="btn-capture-confirm" id="today-capture-confirm">Add to my day</button>
+      </div>
+    </div>
+
+    <!-- Urgent -->
+    <div class="today-urgent">
+      <h3>Urgent</h3>
+      <div class="urgent-card">
+        ⚑ <strong>Due Fri</strong> — MSc thesis methodology chapter<br />
+        Aim to finish today · 2 days to deadline
+      </div>
+    </div>
+
+    <!-- Sinéad AI nudge — compact, notification-style rather than a big
+         banner, so it doesn't compete with the capture box and Urgent
+         above it for attention -->
+    <div class="sinead-nudge">
+      <img class="sinead-avatar" src="/static/images/placeholder-avatar.svg" alt="" />
+      <p>🧠 <strong>Sinéad noticed:</strong> You usually pick up chicken on Thursdays — it's Thursday today. Add it to your grocery list?</p>
+      <div class="nudge-actions">
+        <button type="button" data-action="accept">Add it</button>
+        <button type="button" data-action="dismiss">Not today</button>
+      </div>
+    </div>
+
+    <!-- Morning routine -->
+    <div class="morning-routine">
+      <h3>☀️ Morning routine</h3>
+
+      <div class="timeline-block active">
+        <span class="timeline-time">Now</span>
+        <span>🚿 Shower · 8 min left</span>
+      </div>
+      <div class="timeline-block">
+        <span class="timeline-time">7:00</span>
+        <span>☕ Wake up &amp; coffee — 10 min</span>
+      </div>
+      <div class="timeline-block">
+        <span class="timeline-time">7:10</span>
+        <span>🧘 Morning yoga — 20 min · habit ✓</span>
+      </div>
+      <div class="timeline-block">
+        <span class="timeline-time">7:35</span>
+        <span>🚿 Shower — 15 min</span>
+      </div>
+      <div class="timeline-block">
+        <span class="timeline-time">7:50</span>
+        <span>🍳 Breakfast &amp; journal ⚡ — shortened, 9am lecture, 20 min</span>
+      </div>
+      <div class="timeline-block">
+        <span class="timeline-time">8:10</span>
+        <span>🚶 Leave for Griffith — depart</span>
+      </div>
+    </div>
+
+    <!-- Carry-over from yesterday -->
+    <div class="carry-over">
+      <h3>From yesterday</h3>
+      <div class="carry-over-item">
+        <span>Book dentist appointment</span>
+        <div class="carry-over-actions">
+          <button>Move to today</button>
+          <button>New date</button>
+          <button>Let it go</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Schedule -->
+    <div class="today-urgent">
+      <h3>Today</h3>
+      <div class="schedule-item">
+        <span class="schedule-time">9:00 am</span>
+        <span>Griffith lecture — RAG systems ✓</span>
+      </div>
+      <div class="schedule-item">
+        <span class="schedule-time">12:00 pm</span>
+        <span>📅 Lunch with Esgi — Café on George's St</span>
+      </div>
+      <div class="schedule-item">
+        <span class="schedule-time">7:00 pm</span>
+        <span>🎬 Movie night with Boris</span>
+      </div>
+    </div>
+
+    <!-- Habits mini -->
+    <div class="today-habits">
+      <span class="habit-chip">🧘 Morning yoga — 7 day streak ✓</span>
+      <span class="habit-chip">📖 Read — 3 days</span>
+      <span class="habit-chip">📓 Journal ✓ Done today</span>
+    </div>
+
+    <!-- Coming up -->
+    <div class="coming-up">
+      <h3>Coming up</h3>
+      <ul>
+        <li><strong>Tomorrow</strong> — Griffith lecture — 10am</li>
+        <li><strong>Sat 27</strong> — Farmers market</li>
+        <li><strong>Mon 29</strong> — Thesis deadline</li>
+        <li><strong>Oct 9</strong> — Darren's birthday — 15 days</li>
+      </ul>
+    </div>
+
+    <button class="btn-briefing"><span class="material-symbols-outlined" aria-hidden="true">play_circle</span> Play morning briefing</button>
+</section>
+{% endblock %}

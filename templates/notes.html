@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Notes{% endblock %}
+
+{# The page itself. The section id keeps the page CSS working. #}
+{% block content %}
+<section id="page-notes" class="page active">
+    <div class="notes-header">
+      <div>
+        <h2>Notes</h2>
+        <span class="subtitle">everything, all at once</span>
+      </div>
+      <button class="btn-new-note" data-modal="new-note">+ New note</button>
+    </div>
+
+    <div class="notes-filters" role="group" aria-label="Filter notes">
+      <button class="active" aria-pressed="true">All</button>
+      <button aria-pressed="false">Undated</button>
+      <button aria-pressed="false">Dated</button>
+      <button aria-pressed="false">Urgent</button>
+      <button aria-pressed="false">Done</button>
+    </div>
+
+    <div class="postit-board">
+      <button type="button" class="postit colour-1" data-modal="edit-note">
+        <h4>Pick up herbs</h4>
+        <p>Chamomile, lavender, rosemary from the market</p>
+        <span class="note-meta">Today · 9am</span>
+      </button>
+
+      <button type="button" class="postit urgent colour-5" data-modal="edit-note">
+        <h4>⚑ MSc thesis chapter</h4>
+        <p>Methodology — rewrite intro section</p>
+        <span class="note-meta">Due Fri</span>
+      </button>
+
+      <button type="button" class="postit colour-2" data-modal="edit-note">
+        <h4>Griffith lecture</h4>
+        <p>RAG systems — bring laptop</p>
+        <span class="note-meta">Today · 9am</span>
+      </button>
+
+      <button type="button" class="postit colour-3" data-modal="edit-note">
+        <h4>Call Mum</h4>
+        <p>Ask about Goa apartment keys</p>
+        <span class="note-meta">Undated</span>
+      </button>
+
+      <button type="button" class="postit colour-4" data-modal="edit-note">
+        <h4>Farmers market</h4>
+        <p>Bread, honey, dried flowers</p>
+        <span class="note-meta">Sat 27 Sept</span>
+      </button>
+
+      <button type="button" class="postit done colour-5" data-modal="edit-note">
+        <h4>✓ Book train to Cork</h4>
+        <p>Done</p>
+        <span class="note-meta">Done ✓</span>
+      </button>
+    </div>
+</section>
+{% endblock %}

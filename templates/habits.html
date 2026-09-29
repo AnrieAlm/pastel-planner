@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Habits{% endblock %}
+
+{# The page itself. The section id keeps the page CSS working. #}
+{% block content %}
+<section id="page-habits" class="page active">
+    <div class="habits-header">
+      <h2>Habits</h2>
+      <span class="subtitle">three gentle disciplines</span>
+    </div>
+
+    <!-- Morning yoga -->
+    <div class="habit-card" data-modal="edit-habit">
+      <div class="habit-card-header">
+        <h3>🧘 Morning yoga</h3>
+        <span class="habit-streak">7 days in a row — keep going</span>
+      </div>
+      <span class="habit-status">Active</span>
+      <p class="habit-week-label">This week</p>
+      <div class="habit-week">
+        <span class="habit-day done">M</span>
+        <span class="habit-day done">T</span>
+        <span class="habit-day done">W</span>
+        <span class="habit-day done">T</span>
+        <span class="habit-day">F</span>
+        <span class="habit-day">S</span>
+        <span class="habit-day">S</span>
+      </div>
+      <span class="habit-reminder">Reminder 7:10 am · Mon–Sun · vibrate</span>
+    </div>
+
+    <!-- Read -->
+    <div class="habit-card" data-modal="edit-habit">
+      <div class="habit-card-header">
+        <h3>📖 Read</h3>
+        <span class="habit-streak">3 days — nice rhythm</span>
+      </div>
+      <span class="habit-status">Active</span>
+      <p class="habit-week-label">This week</p>
+      <div class="habit-week">
+        <span class="habit-day done">M</span>
+        <span class="habit-day">T</span>
+        <span class="habit-day done">W</span>
+        <span class="habit-day">T</span>
+        <span class="habit-day done">F</span>
+        <span class="habit-day">S</span>
+        <span class="habit-day">S</span>
+      </div>
+      <span class="habit-reminder">Reminder 9:00 pm · Daily</span>
+    </div>
+
+    <!-- Journal -->
+    <div class="habit-card" data-modal="edit-habit">
+      <div class="habit-card-header">
+        <h3>📓 Journal</h3>
+        <span class="habit-streak">Done today ✓</span>
+      </div>
+      <span class="habit-status">Active</span>
+      <p class="habit-week-label">This week</p>
+      <div class="habit-week">
+        <span class="habit-day done">M</span>
+        <span class="habit-day done">T</span>
+        <span class="habit-day done">W</span>
+        <span class="habit-day done">T</span>
+        <span class="habit-day">F</span>
+        <span class="habit-day">S</span>
+        <span class="habit-day">S</span>
+      </div>
+      <span class="habit-reminder">Reminder 8:00 pm · Daily · routine linked</span>
+    </div>
+
+    <p class="habits-footer">3 of 3 habit slots filled — edit one above to change it</p>
+</section>
+{% endblock %}

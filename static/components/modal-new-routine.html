@@ -1,0 +1,29 @@
+<button class="modal-close" data-close-modal aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-width="1.5" stroke-linecap="square"/></svg></button>
+<h3>New routine</h3>
+
+<label for="routine-name">Name</label>
+<input type="text" id="routine-name" placeholder="e.g. Afternoon reset" />
+
+<label for="routine-anchor">Anchor time (wake-up / start)</label>
+<input type="time" id="routine-anchor" />
+
+<label id="routine-days-label">Active days</label>
+<div class="day-picker" role="group" aria-labelledby="routine-days-label">
+  <button type="button">M</button>
+  <button type="button">T</button>
+  <button type="button">W</button>
+  <button type="button">T</button>
+  <button type="button">F</button>
+  <button type="button">S</button>
+  <button type="button">S</button>
+</div>
+
+<label for="routine-blocks">Add blocks by voice or text</label>
+<textarea id="routine-blocks" placeholder="e.g. 2:00 Walk 20 min, 2:25 Tea 10 min…"></textarea>
+<p style="font-size:var(--fs-xs);color:var(--text-secondary);">
+  Sinéad will parse your block list and build the timeline for you to review.
+</p>
+
+<div class="modal-actions">
+  <button class="btn-modal-primary">Create routine</button>
+</div>

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Routine{% endblock %}
+
+{# The page itself. The section id keeps the page CSS working. #}
+{% block content %}
+<section id="page-routine" class="page active">
+    <div class="routine-header">
+      <div>
+        <h2>Routine</h2>
+        <span class="subtitle">your day, structured gently</span>
+      </div>
+      <button class="btn-new-routine" data-modal="new-routine">+ New routine</button>
+    </div>
+
+    <p style="font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:var(--sp-md);">Active routines</p>
+
+    <!-- Morning weekday -->
+    <div class="routine-card">
+      <div class="routine-card-header">
+        <h3>Morning weekday</h3>
+        <span class="routine-meta">7:00 am anchor · 1h 30m total</span>
+      </div>
+      <button class="routine-edit-btn">Edit</button>
+      <div class="routine-days">
+        <span class="routine-day active">M</span>
+        <span class="routine-day active">T</span>
+        <span class="routine-day active">W</span>
+        <span class="routine-day active">T</span>
+        <span class="routine-day active">F</span>
+        <span class="routine-day">S</span>
+        <span class="routine-day">S</span>
+      </div>
+      <div class="routine-block"><span class="block-time">7:00</span> ☕ Wake up &amp; coffee <span class="block-duration">10 min</span> <span class="block-tag">Fixed 📳</span></div>
+      <div class="routine-block"><span class="block-time">7:10</span> 🧘 Morning yoga 🔗 habit <span class="block-duration">20 min</span> <span class="block-tag flexible">Flexible 📳</span></div>
+      <div class="routine-block"><span class="block-time">7:30</span> 🪥 Brush teeth <span class="block-duration">5 min</span> <span class="block-tag">Fixed</span></div>
+      <div class="routine-block"><span class="block-time">7:35</span> 🚿 Shower <span class="block-duration">15 min</span> <span class="block-tag">Fixed 📳</span></div>
+      <div class="routine-block"><span class="block-time">7:50</span> 👗 Get dressed <span class="block-duration">10 min</span> <span class="block-tag">Fixed</span></div>
+      <div class="routine-block"><span class="block-time">8:00</span> 🍳 Breakfast &amp; journal 🔗 habit <span class="block-duration">25 min</span> <span class="block-tag flexible">Flexible 📳</span></div>
+      <div class="routine-block"><span class="block-time">8:25</span> 🚶 Leave for Griffith — depart <span class="block-tag">Fixed 📳</span></div>
+    </div>
+
+    <!-- Weekend morning -->
+    <div class="routine-card">
+      <div class="routine-card-header">
+        <h3>Weekend morning</h3>
+        <span class="routine-meta">9:00 am anchor · slow &amp; loose</span>
+      </div>
+      <button class="routine-edit-btn">Edit</button>
+      <div class="routine-days">
+        <span class="routine-day">M</span>
+        <span class="routine-day">T</span>
+        <span class="routine-day">W</span>
+        <span class="routine-day">T</span>
+        <span class="routine-day">F</span>
+        <span class="routine-day active">S</span>
+        <span class="routine-day active">S</span>
+      </div>
+      <p class="routine-note">Slower start — suggestions, not timers.</p>
+    </div>
+
+    <!-- Evening wind-down -->
+    <div class="routine-card">
+      <div class="routine-card-header">
+        <h3>Evening wind-down</h3>
+        <span class="routine-meta">9:00 pm anchor · 45 min total</span>
+      </div>
+      <button class="routine-edit-btn">Edit</button>
+      <div class="routine-days">
+        <span class="routine-day active">M</span>
+        <span class="routine-day active">T</span>
+        <span class="routine-day active">W</span>
+        <span class="routine-day active">T</span>
+        <span class="routine-day active">F</span>
+        <span class="routine-day active">S</span>
+        <span class="routine-day active">S</span>
+      </div>
+      <div class="routine-block"><span class="block-time">9:00</span> 📓 Journal 🔗 habit <span class="block-duration">15 min</span> <span class="block-tag flexible">Flexible 📳</span></div>
+      <div class="routine-block"><span class="block-time">9:15</span> 🧴 Skin routine <span class="block-duration">10 min</span> <span class="block-tag">Fixed</span></div>
+      <div class="routine-block"><span class="block-time">9:25</span> 📖 Read <span class="block-duration">20 min</span> <span class="block-tag flexible">Flexible</span></div>
+      <div class="routine-block"><span class="block-time">9:45</span> 💤 Lights out <span class="block-tag">Fixed 📳</span></div>
+    </div>
+</section>
+{% endblock %}

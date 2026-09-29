@@ -1,0 +1,176 @@
+/*
+  Calyx Planner — Sidebar (desktop nav)
+  Uses --bg-card (not a separate --bg-sidebar) to stay on-token.
+*/
+
+#sidebar {
+  background: var(--bg-card);
+  border-right: 1px solid var(--border-soft);
+  padding: var(--sp-lg) var(--sp-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-lg);
+}
+
+.sidebar-collapse-toggle {
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.sidebar-collapse-toggle:hover {
+  background: var(--bg-raised);
+  color: var(--text-primary);
+}
+.sidebar-collapse-toggle svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s var(--ease-soft);
+}
+
+.sidebar-logo img,
+.sidebar-logo > svg {
+  width: 32px;
+  height: 32px;
+}
+
+.sidebar-logo h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.sidebar-tagline {
+  font-family: var(--font-hand);
+  font-size: var(--fs-md);
+  color: var(--accent-primary);
+  margin-bottom: var(--sp-xl);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-sm) var(--sp-md);
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: background 0.2s var(--ease-soft), color 0.2s var(--ease-soft);
+}
+
+.sidebar-nav a svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.5;
+  flex-shrink: 0;
+}
+
+.sidebar-nav a:hover {
+  background: var(--bg-raised);
+  color: var(--text-primary);
+}
+
+.sidebar-nav a.active {
+  background: var(--accent-primary);
+  color: var(--accent-on);
+}
+
+.sidebar-user {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-sm);
+  border-radius: var(--radius-sm);
+  border-top: 1px solid var(--border-soft);
+  padding-top: var(--sp-md);
+}
+
+.sidebar-user img {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+}
+
+.sidebar-user span {
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.sidebar-user a {
+  margin-left: auto;
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.sidebar-user a:hover { color: var(--text-primary); }
+
+.sidebar-user a svg {
+  width: 18px;
+  height: 18px;
+}
+/* ===== Collapsed state — icon-only rail, Claude.ai-style ===== */
+#app-shell.sidebar-collapsed #sidebar {
+  padding: var(--sp-lg) var(--sp-xs);
+}
+
+#app-shell.sidebar-collapsed .sidebar-logo {
+  justify-content: center;
+}
+#app-shell.sidebar-collapsed .sidebar-logo > svg,
+#app-shell.sidebar-collapsed .sidebar-logo h1,
+#app-shell.sidebar-collapsed .sidebar-tagline,
+#app-shell.sidebar-collapsed .sidebar-nav-label,
+#app-shell.sidebar-collapsed .sidebar-user-name {
+  display: none;
+}
+#app-shell.sidebar-collapsed .sidebar-collapse-toggle {
+  margin-left: 0;
+}
+#app-shell.sidebar-collapsed .sidebar-collapse-toggle svg {
+  transform: rotate(180deg);
+}
+
+#app-shell.sidebar-collapsed .sidebar-nav a {
+  justify-content: center;
+  padding: var(--sp-sm);
+}
+
+#app-shell.sidebar-collapsed .sidebar-user {
+  flex-direction: column;
+  gap: var(--sp-sm);
+}
+#app-shell.sidebar-collapsed .sidebar-user a {
+  margin-left: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-collapse-toggle svg {
+    transition: none;
+  }
+}

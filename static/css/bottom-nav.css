@@ -1,0 +1,81 @@
+/*
+  Calyx Planner — Bottom Nav (mobile)
+*/
+
+#bottom-nav {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  #bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--bottom-nav-height);
+    background: var(--bg-raised);
+    border-top: 1px solid var(--border-soft);
+    box-shadow: var(--shadow-lift);
+    justify-content: space-around;
+    align-items: center;
+    z-index: 100;
+  }
+
+  .bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 44px;
+    min-height: 44px;
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: color 0.2s var(--ease-soft);
+  }
+
+  .bottom-nav-item.active {
+    color: var(--accent-primary);
+  }
+
+  .bottom-nav-item svg {
+    width: 22px;
+    height: 22px;
+    stroke-width: 1.5;
+  }
+
+  .bottom-nav-item.active svg {
+    stroke-width: 2;
+  }
+
+  .bottom-nav-add {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-full);
+    background: var(--accent-primary);
+    color: var(--accent-on);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-lift);
+    transform: translateY(-10px);
+    transition: transform 0.15s var(--ease-soft);
+  }
+
+  .bottom-nav-add:active {
+    transform: translateY(-10px) scale(0.92);
+  }
+
+  .bottom-nav-add svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* Play icon shown on Today instead of the usual "+" — sized to match */
+  .bottom-nav-add .material-symbols-outlined {
+    font-size: 26px;
+    color: inherit;
+  }
+}

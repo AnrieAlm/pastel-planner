@@ -1,0 +1,141 @@
+/*
+  Calyx Planner — Auth screen (login / create account)
+*/
+
+#auth-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  background: var(--bg-base);
+  padding: var(--sp-md);
+}
+
+.auth-card {
+  background: var(--bg-raised);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lift);
+  border: 1px solid var(--border-soft);
+  padding: var(--sp-2xl) var(--sp-xl);
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+}
+
+.auth-card img,
+.auth-card svg {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto var(--sp-md);
+}
+
+.auth-card h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-2xl);
+  color: var(--text-primary);
+  margin-bottom: var(--sp-xs);
+}
+
+.auth-card .tagline {
+  font-family: var(--font-hand);
+  font-size: var(--fs-md);
+  color: var(--accent-primary);
+  margin-bottom: var(--sp-lg);
+}
+
+.auth-card label {
+  display: block;
+  text-align: left;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  margin-bottom: var(--sp-xs);
+  color: var(--text-secondary);
+}
+
+.auth-card input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--sp-md);
+  border: 1.5px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--sp-md);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: var(--fs-base);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auth-card input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.auth-card input:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-primary) 20%, transparent);
+}
+
+.auth-card .btn-primary {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--sp-md);
+  background: var(--accent-primary);
+  color: var(--accent-on);
+  border-radius: var(--radius-full);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: var(--fs-base);
+  box-shadow: var(--shadow-soft);
+  margin-top: var(--sp-sm);
+  transition: transform 0.15s var(--ease-soft), box-shadow 0.15s var(--ease-soft), filter 0.15s ease;
+}
+
+.auth-card .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift);
+  filter: brightness(0.96);
+}
+
+.auth-card .btn-primary:active {
+  transform: translateY(0);
+}
+
+.auth-card .auth-toggle {
+  margin-top: var(--sp-md);
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.auth-card .auth-toggle a {
+  color: var(--accent-primary);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.auth-privacy {
+  margin-top: var(--sp-lg);
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+}
+
+/* Friendly error message (not in the original — the instructions ask for
+   "friendly error messages" on this screen, so the hook is here now) */
+.auth-error {
+  display: none;
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--accent-secondary);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-sm) var(--sp-md);
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+  text-align: left;
+  margin-bottom: var(--sp-md);
+}
+
+.auth-error.visible {
+  display: block;
+}

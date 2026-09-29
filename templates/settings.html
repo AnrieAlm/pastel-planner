@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+
+{# The page itself. The section id keeps the page CSS working. #}
+{% block content %}
+<section id="page-settings" class="page active">
+    <div class="settings-header">
+      <h2>Settings</h2>
+      <span class="subtitle">your planner, your way</span>
+    </div>
+
+    <!-- Profile -->
+    <div class="settings-section">
+      <h3>Profile</h3>
+      <div class="settings-row">
+        <label for="settings-name">Name</label>
+        <input type="text" id="settings-name" value="Maya" />
+      </div>
+      <div class="settings-row">
+        <label for="settings-email">Email</label>
+        <input type="email" id="settings-email" value="maya@example.com" />
+      </div>
+      <div class="settings-row">
+        <label for="settings-timezone">Timezone</label>
+        <select id="settings-timezone">
+          <option selected>Europe/Dublin (IST)</option>
+          <option>Asia/Kolkata</option>
+          <option>Europe/Lisbon</option>
+        </select>
+      </div>
+      <button class="btn-modal-primary" style="margin-top:var(--sp-sm);">Save changes</button>
+    </div>
+
+    <!-- Theme -->
+    <div class="settings-section">
+      <h3>Appearance</h3>
+      <p style="font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:var(--sp-xs);">Choose how Calyx Planner looks</p>
+
+     <div class="theme-picker" role="group" aria-label="Theme">
+      <button type="button" class="theme-option" data-theme="cottagecore" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <path d="M12 3c-1.5 6-6 9-9 9 3 6 9 9 9 9s6-3 9-9c-3 0-7.5-3-9-9z" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        Cottagecore
+      </button>
+      <button type="button" class="theme-option" data-theme="midnight" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <path d="M21 12.5A9 9 0 1 1 11.5 3a7 7 0 0 0 9.5 9.5z" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        Midnight Garden
+      </button>
+    </div>
+    </div>
+
+    <!-- Sinéad -->
+    <div class="settings-section">
+      <h3>Sinéad</h3>
+      <div class="settings-row">
+        <label for="toggle-voice">Voice assistant</label>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-voice" checked />
+          <span class="slider" aria-hidden="true"></span>
+        </label>
+      </div>
+      <p style="font-size:var(--fs-xs);color:var(--text-secondary);">Speak to Sinéad from the Today page</p>
+
+      <div class="settings-row">
+        <label for="toggle-accent">Dublin accent voice</label>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-accent" checked />
+          <span class="slider" aria-hidden="true"></span>
+        </label>
+      </div>
+
+      <div class="settings-row">
+        <label for="toggle-tts">ElevenLabs Irish voice for readbacks</label>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-tts" />
+          <span class="slider" aria-hidden="true"></span>
+        </label>
+      </div>
+
+      <div class="settings-row">
+        <label for="toggle-pattern">Pattern learning</label>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-pattern" checked />
+          <span class="slider" aria-hidden="true"></span>
+        </label>
+      </div>
+
+      <div class="settings-row">
+        <label for="toggle-briefing">Morning briefing</label>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-briefing" checked />
+          <span class="slider" aria-hidden="true"></span>
+        </label>
+      </div>
+      <p style="font-size:var(--fs-xs);color:var(--text-secondary);">Auto-play when you open the app</p>
+    </div>
+
+    <!-- Notifications -->
+    <div class="settings-section">
+      <h3>Notifications &amp; vibration</h3>
+      <div class="settings-row">
+        <label for="toggle-push">Push notifications</label>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-push" checked />
+          <span class="slider" aria-hidden="true"></span>
+        </label>
+      </div>
+      <p style="font-size:var(--fs-xs);color:var(--text-secondary);">Reminders for notes and habits</p>
+
+      <div class="settings-row">
+        <label for="toggle-vibrate">Routine vibration</label>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-vibrate" checked />
+          <span class="slider" aria-hidden="true"></span>
+        </label>
+      </div>
+      <p style="font-size:var(--fs-xs);color:var(--text-secondary);">Vibrate at the start of each routine block</p>
+
+      <div class="settings-row">
+        <label for="toggle-habit-reminder">Habit reminders</label>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-habit-reminder" checked />
+          <span class="slider" aria-hidden="true"></span>
+        </label>
+      </div>
+
+      <div class="settings-row">
+        <label for="toggle-deadline">Deadline alerts</label>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-deadline" checked />
+          <span class="slider" aria-hidden="true"></span>
+        </label>
+      </div>
+      <p style="font-size:var(--fs-xs);color:var(--text-secondary);">Morning of finish-by date</p>
+
+      <div class="settings-note">
+        📱 iPhone users: Add to Home Screen for vibration and push to work. Safari → Share → Add to Home Screen.
+      </div>
+    </div>
+
+    <!-- Data -->
+    <div class="settings-section">
+      <h3>Data</h3>
+      <div class="settings-row">
+        <label>Export all data</label>
+        <button class="btn-modal-secondary">Download as JSON</button>
+      </div>
+    </div>
+
+    <div class="settings-danger">
+      <button class="btn-signout">Sign out</button>
+      <button class="btn-delete" data-modal="delete-account">Delete account</button>
+    </div>
+</section>
+{% endblock %}

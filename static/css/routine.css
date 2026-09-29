@@ -1,0 +1,156 @@
+/*
+  Calyx Planner — Routine page
+  Uses the primary accent (same family as Today & Habits) —
+  no separate colour role introduced for this page.
+*/
+
+.routine-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-md);
+  margin-bottom: var(--sp-lg);
+}
+
+.routine-header h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-xl);
+  color: var(--text-primary);
+}
+
+.routine-header .subtitle {
+  font-family: var(--font-hand);
+  font-size: var(--fs-md);
+  color: var(--accent-primary);
+}
+
+.btn-new-routine {
+  min-height: 44px;
+  padding: 0 var(--sp-md);
+  background: var(--accent-primary);
+  color: var(--accent-on);
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.15s var(--ease-soft), box-shadow 0.15s var(--ease-soft), filter 0.15s ease;
+  flex-shrink: 0;
+}
+
+.btn-new-routine:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift);
+  filter: brightness(0.96);
+}
+
+.routine-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  padding: var(--sp-md);
+  margin-bottom: var(--sp-md);
+}
+
+.routine-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-sm);
+}
+
+.routine-card-header h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-base);
+  color: var(--text-primary);
+}
+
+.routine-meta {
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+}
+
+.routine-edit-btn {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--text-secondary);
+  min-height: 32px;
+  padding: 0 var(--sp-sm);
+  border-radius: var(--radius-full);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.routine-edit-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-raised);
+}
+
+.routine-days {
+  display: flex;
+  gap: var(--sp-xs);
+  margin: var(--sp-sm) 0;
+}
+
+.routine-day {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  background: var(--day-circle-bg);   /* was var(--border-soft) */
+  color: var(--text-secondary);
+}
+
+.routine-day.active {
+  background: var(--accent-primary);
+  color: var(--accent-on);
+}
+
+.routine-block {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-sm);
+  padding: var(--sp-xs) 0;
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+}
+
+.routine-block .block-time {
+  color: var(--text-secondary);
+  min-width: 48px;
+  flex-shrink: 0;
+}
+
+.routine-block .block-duration {
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+}
+
+.routine-block .block-tag {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  padding: 2px var(--sp-sm);
+  border-radius: var(--radius-full);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-soft);
+  color: var(--text-secondary);
+}
+
+.routine-block .block-tag.flexible {
+  background: color-mix(in srgb, var(--accent-quaternary) 18%, var(--bg-base));
+  border-color: transparent;
+  color: var(--accent-quaternary);
+}
+
+.routine-note {
+  font-family: var(--font-hand);
+  font-size: var(--fs-md);
+  color: var(--text-secondary);
+  margin-top: var(--sp-sm);
+}

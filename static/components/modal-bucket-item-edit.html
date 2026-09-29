@@ -1,0 +1,24 @@
+<button class="modal-close" data-close-modal aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-width="1.5" stroke-linecap="square"/></svg></button>
+<h3>Edit bucket item</h3>
+
+<label for="edit-bucket-title">Title</label>
+<input type="text" id="edit-bucket-title" value="See Northern Lights" />
+
+<label for="edit-bucket-category">Category</label>
+<select id="edit-bucket-category">
+  <option value="movies">🎬 Movies</option>
+  <option value="places">📍 Places</option>
+  <option value="things">📦 Things</option>
+  <option value="experiences" selected>✨ Experiences</option>
+</select>
+
+<label for="edit-bucket-link">Link (optional)</label>
+<input type="url" id="edit-bucket-link" placeholder="https://…" />
+
+<div class="modal-actions">
+  <button class="btn-modal-secondary">Plan it — add a date</button>
+</div>
+<div class="modal-actions">
+  <button class="btn-modal-primary" data-action="mark-done">Mark done</button>
+  <button class="btn-modal-danger">Remove</button>
+</div>

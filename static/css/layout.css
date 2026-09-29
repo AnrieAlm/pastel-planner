@@ -1,0 +1,111 @@
+/*
+  Calyx Planner — App Shell Layout
+  Sidebar + main content on desktop, bottom nav on mobile.
+  Breakpoint: 700px (kept consistent with the rest of the design system).
+*/
+
+.screen {
+  min-height: 100dvh;
+}
+
+/* App shell — sidebar + main */
+#app-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  grid-template-rows: 1fr;
+  min-height: 100dvh;
+  transition: grid-template-columns 0.25s var(--ease-soft);
+}
+
+#app-shell.sidebar-collapsed {
+  grid-template-columns: var(--sidebar-width-collapsed) 1fr;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #app-shell {
+    transition: none;
+  }
+}
+
+#main-content {
+  padding: var(--sp-lg);
+  overflow-y: auto;
+  max-height: 100dvh;
+}
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+/* Mobile: single column, bottom nav */
+@media (max-width: 700px) {
+  #app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  #app-shell #sidebar {
+    display: none;
+  }
+
+  #main-content {
+    padding: var(--sp-md);
+    padding-bottom: calc(var(--bottom-nav-height) + var(--sp-lg) + env(safe-area-inset-bottom, 0px));
+  }
+
+  #bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Wide content inside a page (tables, long routine timelines) scrolls
+   sideways in its own box rather than pushing the whole page wide */
+.scroll-x {
+  overflow-x: auto;
+}
+
+/* ===== Desktop floating play button =====
+   Bottom-right is the conventional, unobtrusive FAB position — clear
+   of the sidebar on the left and the page content's natural reading
+   column, so it reads as a persistent utility rather than competing
+   for attention with the page itself. */
+.global-play-fab {
+  position: fixed;
+  right: 32px;
+  bottom: 32px;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  background: var(--accent-primary);
+  color: var(--accent-on);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-lift);
+  z-index: 10;
+  transition: transform 0.15s var(--ease-soft), box-shadow 0.15s var(--ease-soft);
+}
+.global-play-fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.22);
+}
+.global-play-fab:active {
+  transform: translateY(0) scale(0.94);
+}
+.global-play-fab .material-symbols-outlined {
+  font-size: 28px;
+}
+
+/* Hidden on mobile — the bottom-nav's centre button already becomes
+   this same Play action on the Today page (see js/navigation.js) */
+@media (max-width: 700px) {
+  .global-play-fab {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .global-play-fab {
+    transition: none;
+  }
+}

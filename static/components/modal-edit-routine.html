@@ -1,0 +1,30 @@
+<button class="modal-close" data-close-modal aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-width="1.5" stroke-linecap="square"/></svg></button>
+<h3>Edit routine</h3>
+
+<label for="edit-routine-name">Name</label>
+<input type="text" id="edit-routine-name" value="Morning weekday" />
+
+<label for="edit-routine-anchor">Anchor time (wake-up / start)</label>
+<input type="time" id="edit-routine-anchor" value="07:00" />
+
+<label id="edit-routine-days-label">Active days</label>
+<div class="day-picker" role="group" aria-labelledby="edit-routine-days-label">
+  <button type="button" class="active">M</button>
+  <button type="button" class="active">T</button>
+  <button type="button" class="active">W</button>
+  <button type="button" class="active">T</button>
+  <button type="button" class="active">F</button>
+  <button type="button">S</button>
+  <button type="button">S</button>
+</div>
+
+<label for="edit-routine-blocks">Blocks</label>
+<textarea id="edit-routine-blocks">7:00 Wake up & coffee 10 min, 7:10 Morning yoga 20 min, 7:30 Brush teeth 5 min, 7:35 Shower 15 min, 7:50 Get dressed 10 min, 8:00 Breakfast & journal 25 min, 8:25 Leave for Griffith</textarea>
+<p style="font-size:var(--fs-xs);color:var(--text-secondary);">
+  Sinéad will re-parse this list and rebuild the timeline.
+</p>
+
+<div class="modal-actions">
+  <button class="btn-modal-primary">Save</button>
+  <button class="btn-modal-danger">Delete routine</button>
+</div>

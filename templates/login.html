@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+
+{# The login page has no sidebar or bottom nav, so it replaces the whole body block #}
+{% block body %}
+<div id="auth-screen" class="screen active">
+  <div id="auth-container">
+    <div class="auth-card">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="24" cy="24" r="22" fill="var(--accent-primary)" />
+        <path d="M24 14c-1 4-4 6-8 6 2 4 6 6 8 6s6-2 8-6c-4 0-7-2-8-6z" fill="var(--accent-on)" />
+      </svg>
+      <h1>Calyx Planner</h1>
+      <p class="tagline">your cosy corner for everything</p>
+
+      <p class="auth-error" role="alert" aria-live="assertive"></p>
+
+      <form id="auth-form" novalidate>
+        <label for="auth-email">Email</label>
+        <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email" />
+
+        <label for="auth-password">Password</label>
+        <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password" />
+
+        <button type="submit" class="btn-primary" id="auth-submit">Sign in</button>
+      </form>
+
+      <p class="auth-toggle">
+        or <a href="#" id="auth-toggle-link">Create account</a>
+      </p>
+
+      <p class="auth-privacy">Your notes are yours alone.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

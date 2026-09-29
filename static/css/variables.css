@@ -1,0 +1,143 @@
+/*
+  Calyx Planner — Design Tokens
+  Two themes, one set of variables. Switch by setting
+  data-theme="cottagecore" or data-theme="midnight" on <html>.
+  Cottagecore is the default (no attribute needed).
+*/
+
+:root {
+  /* ===== COTTAGECORE (default / light) ===== */
+  --bg-base:        #FDFBF7;
+  --bg-card:        #F4EFE6;
+  --bg-raised:      #FFFFFF;
+  --text-primary:   #3A3128;
+  --text-secondary: #6E6152;
+  --border-soft:    rgba(58, 49, 40, 0.12);
+  --border-strong:  rgba(58, 49, 40, 0.28);
+  --shadow-soft:    0px 2px 8px rgba(58, 49, 40, 0.08);
+  --shadow-lift:    0px 4px 14px rgba(58, 49, 40, 0.16);
+  --focus-ring:     #5D7654;
+--day-circle-bg: rgba(58, 49, 40, 0.08);   /* was reusing --border-soft (0.12) — too dark once composited under --text-secondary, failed 4.5:1 at 4.34:1. 0.08 gives 4.67:1. */
+  /* accent roles — same four roles in both themes */
+  --accent-primary:      #5D7654; /* Sage */
+  --accent-secondary:    #B5716F; /* Rose */
+  --accent-tertiary:     #A17F1F; /* Gold */
+  --accent-quaternary:   #8A6B8C; /* Dusty Plum */
+  --calendar-secondary:  #8A6B8C; /* same as Dusty Plum — Cottagecore habit/deadline marker, unchanged */
+  --accent-on:           #FDFBF7; /* text/icon colour sitting ON any accent */
+
+  /* Bucket List keepsakes — each category's accent role, since Movies/
+     Places/Things deliberately use a DIFFERENT role in Midnight Garden
+     than in Cottagecore (Experiences stays Quaternary in both). */
+  --bkl-movies-accent:      var(--accent-secondary); /* Rose */
+  --bkl-places-accent:      var(--accent-primary);   /* Sage */
+  --bkl-things-accent:      var(--accent-tertiary);  /* Gold */
+  --bkl-experiences-accent: var(--accent-quaternary);/* Dusty Plum */
+  /* Ink text sitting on the physical paper objects — Cottagecore's real
+     --text-primary/secondary are already dark enough to reuse directly. */
+  --bkl-ink:      var(--text-primary);
+  --bkl-ink-soft: var(--text-secondary);
+
+  /* Post-it Colors (Vintage) */
+    --postit-1: #F2E3C6; /* Aged Yellow */
+    --postit-2: #F0D6D6; /* Dried Rose */
+    --postit-3: #DCE5D8; /* Faded Sage */
+    /* :root (cottagecore) block */
+--postit-4: #E8DFF5;
+/* :root (cottagecore) block, next to --postit-4 */
+--postit-5: #D9E4F0; /* Powder Blue */
+    --postit-text: #4A5568;/* Soft Ink Blue/Grey */
+    --tape-color: rgba(212, 165, 165, 0.6); /* Dusty Rose Tape */
+
+  --calendar-bg:            #FDF8F1;
+--calendar-text:          #4A3B32;
+--calendar-text-secondary: #8D7B6E;
+--calendar-mark:      #D4A5A5;
+--calendar-mark-tint: #E8C4C4;
+  /* type */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body:    'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --font-hand:    'Caveat', cursive;
+
+  --fs-xs:  0.75rem;   /* 12px */
+  --fs-sm:  0.8125rem; /* 13px */
+  --fs-base: 0.9375rem;/* 15px */
+  --fs-md:  1.0625rem; /* 17px */
+  --fs-lg:  1.25rem;   /* 20px */
+  --fs-xl:  1.75rem;   /* 28px */
+  --fs-2xl: 2.25rem;   /* 36px */
+
+  /* spacing — 8pt grid */
+  --sp-xs:  4px;
+  --sp-sm:  8px;
+  --sp-md:  16px;
+  --sp-lg:  24px;
+  --sp-xl:  32px;
+  --sp-2xl: 48px;
+
+  /* radii */
+  --radius-sm:   10px;
+  --radius-md:   14px;
+  --radius-lg:   20px;
+  --radius-full: 9999px;
+
+  /* layout */
+  --sidebar-width: 240px;
+  --sidebar-width-collapsed: 72px;
+  --bottom-nav-height: 64px;
+
+  /* motion */
+  --ease-soft: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* ===== MIDNIGHT GARDEN (dark) ===== */
+[data-theme="midnight"] {
+  --bg-base:        #1A1F1C;
+  --bg-card:        #242B27;
+  --bg-raised:      #2C332E;
+  --text-primary:   #F0EDE7;
+  --text-secondary: #B8B3AA;
+  --border-soft:    rgba(240, 237, 231, 0.12);
+  --border-strong:  rgba(240, 237, 231, 0.28);
+  --shadow-soft:    0px 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-lift:    0px 4px 16px rgba(0, 0, 0, 0.5);
+  --focus-ring:     #E0C387;
+--day-circle-bg: rgba(240, 237, 231, 0.12);   /* same value as --border-soft — already passes at 4.93:1, just given its own token so it's not accidentally coupled to border-soft's future changes */
+  --accent-primary:      #E0C387; /* Gold */
+  --accent-secondary:    #83A788; /* Moss */
+  --accent-tertiary:     #AB7F69; /* Cocoa */
+  --accent-quaternary:   #D98FA3; /* Dusty Berry */
+  --calendar-secondary:  #83A788; /* Moss — Midnight habit/deadline marker */
+  --accent-on:           #1A1F1C; /* text/icon colour sitting ON any accent */
+
+  /* Bucket List keepsakes — roles deliberately shift per theme here
+     (Movies: Secondary in Cottagecore -> Tertiary in Midnight; Places:
+     Primary -> Secondary; Things: Tertiary -> Primary). Experiences
+     stays Quaternary in both. */
+  --bkl-movies-accent:      var(--accent-tertiary); /* Cocoa */
+  --bkl-places-accent:      var(--accent-secondary);/* Moss */
+  --bkl-things-accent:      var(--accent-primary);  /* Gold */
+  --bkl-experiences-accent: var(--accent-quaternary);/* Dusty Berry */
+  /* Midnight Garden's real --text-primary is light — wrong for text
+     sitting on light paper objects, so these are fixed dark literals
+     instead of reusing the theme's normal text tokens. */
+  --bkl-ink:      #2A2520;
+  --bkl-ink-soft: #6B5D4F;
+
+  --postit-1: #EDE3D0;
+  --postit-2: #CFDACF;
+  --postit-3: #D9CFDD;
+  /* [data-theme="midnight"] block */
+--postit-4: #D6CBE8; /* muted lavender, consistent with
+ the other dark-theme post-it tones */
+ /* [data-theme="midnight"] block, next to --postit-4 */
+--postit-5: #C7D3E3; /* Dusty Slate Blue */
+  --postit-text: #2A2520; /* stays dark ink even on the dark theme — legible on light post-it paper */
+  --tape-color: rgba(224, 195, 135, 0.55);
+
+  --calendar-mark:            #9C6367;
+--calendar-mark-tint:       #C98287;
+--calendar-bg:               #242B27; /* reusing --bg-card's value; adjust if you want it distinct */
+--calendar-text:             #F0EDE7; /* reusing --text-primary's value */
+--calendar-text-secondary:   #B8B3AA; /* reusing --text-secondary's value */
+}

@@ -1,0 +1,34 @@
+<button class="modal-close" data-close-modal aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-width="1.5" stroke-linecap="square"/></svg></button>
+<h3>Edit habit</h3>
+
+<label for="habit-name">Name</label>
+<input type="text" id="habit-name" value="Morning yoga" />
+
+<label for="habit-time">Reminder time</label>
+<input type="time" id="habit-time" value="07:10" />
+
+<label id="habit-days-label">Days</label>
+<div class="day-picker" role="group" aria-labelledby="habit-days-label">
+  <button type="button" class="active">Mon</button>
+  <button type="button" class="active">Tue</button>
+  <button type="button" class="active">Wed</button>
+  <button type="button" class="active">Thu</button>
+  <button type="button" class="active">Fri</button>
+  <button type="button" class="active">Sat</button>
+  <button type="button" class="active">Sun</button>
+</div>
+
+<label for="habit-routine-link">Linked routine block</label>
+<select id="habit-routine-link">
+  <option>Morning yoga (Morning weekday)</option>
+  <option>— none —</option>
+</select>
+
+<label style="display:flex; align-items:center; gap:var(--sp-xs);">
+  <input type="checkbox" id="habit-vibrate" checked /> Vibrate on reminder
+</label>
+
+<div class="modal-actions">
+  <button class="btn-modal-primary">Save</button>
+  <button class="btn-modal-danger">Remove</button>
+</div>

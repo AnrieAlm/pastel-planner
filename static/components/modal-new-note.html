@@ -1,0 +1,31 @@
+<button class="modal-close" data-close-modal aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-width="1.5" stroke-linecap="square"/></svg></button>
+<h3>New note</h3>
+
+<label for="new-note-title">Title</label>
+<input type="text" id="new-note-title" placeholder="e.g. Pick up herbs" />
+
+<label for="new-note-content">Notes</label>
+<textarea id="new-note-content" placeholder="Optional details…"></textarea>
+
+<label id="new-note-colour-label">Colour</label>
+<div class="colour-options" role="group" aria-labelledby="new-note-colour-label">
+  <button type="button" class="colour-dot colour-1 selected" aria-label="Honey cream" aria-pressed="true"></button>
+  <button type="button" class="colour-dot colour-2" aria-label="Dried rose" aria-pressed="false"></button>
+  <button type="button" class="colour-dot colour-3" aria-label="Faded sage" aria-pressed="false"></button>
+  <button type="button" class="colour-dot colour-4" aria-label="Lilac" aria-pressed="false"></button>
+  <button type="button" class="colour-dot colour-5" aria-label="Powder blue" aria-pressed="false"></button>
+</div>
+
+<label style="display:flex; align-items:center; gap:var(--sp-xs);">
+  <input type="checkbox" id="new-note-urgent" /> Urgent
+</label>
+
+<label for="new-note-datetime">Date &amp; time (optional)</label>
+<input type="datetime-local" id="new-note-datetime" />
+
+<label for="new-note-deadline">Deadline (optional)</label>
+<input type="date" id="new-note-deadline" />
+
+<div class="modal-actions">
+  <button class="btn-modal-primary">Add note</button>
+</div>

@@ -1,0 +1,138 @@
+/*
+  Calyx Planner — Grocery list page
+  Tertiary accent (shares the family with Notes — both are
+  running checklists). Sinéad AI nudges always use the
+  quaternary accent, on every page, regardless of that
+  page's own colour — see .grocery-nudge below.
+*/
+
+.grocery-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-md);
+  margin-bottom: var(--sp-md);
+}
+
+.grocery-header h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-xl);
+  color: var(--text-primary);
+}
+
+.grocery-header .subtitle {
+  font-family: var(--font-hand);
+  font-size: var(--fs-md);
+  color: var(--accent-tertiary);
+}
+
+.btn-add-grocery {
+  min-height: 44px;
+  padding: 0 var(--sp-md);
+  background: var(--accent-quaternary);
+  color: var(--accent-on);
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.15s var(--ease-soft), box-shadow 0.15s var(--ease-soft), filter 0.15s ease;
+  flex-shrink: 0;
+}
+
+.btn-add-grocery:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift);
+  filter: brightness(0.96);
+}
+
+/* Sinéad nudge — same tint as Today's, on purpose */
+.grocery-nudge {
+  background: color-mix(in srgb, var(--accent-quaternary) 14%, var(--bg-base));
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  padding: var(--sp-md);
+  margin-bottom: var(--sp-md);
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+  display: flex;
+  gap: var(--sp-sm);
+  align-items: flex-start;
+}
+
+.grocery-nudge button {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  min-height: 32px;
+  padding: 0 var(--sp-sm);
+  margin-top: var(--sp-xs);
+  border-radius: var(--radius-full);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-soft);
+  color: var(--text-primary);
+  transition: background 0.15s ease;
+}
+
+.grocery-nudge button:hover {
+  background: var(--bg-card);
+}
+
+.grocery-list {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  padding: var(--sp-md);
+}
+
+.grocery-list h3 {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: var(--sp-sm);
+}
+
+.grocery-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  min-height: 44px;
+  padding: var(--sp-xs) 0;
+  font-size: var(--fs-base);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.grocery-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent-tertiary);
+  flex-shrink: 0;
+}
+
+.grocery-item.checked {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+
+.grocery-actions {
+  display: flex;
+  gap: var(--sp-md);
+  margin-top: var(--sp-md);
+  flex-wrap: wrap;
+}
+
+.grocery-actions button {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  min-height: 36px;
+  padding: 0 var(--sp-md);
+  border-radius: var(--radius-full);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-soft);
+  color: var(--text-primary);
+  transition: background 0.15s ease;
+}
+
+.grocery-actions button:hover {
+  background: var(--bg-card);
+}

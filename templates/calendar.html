@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Calendar{% endblock %}
+
+{# The page itself. The section id keeps the page CSS working. #}
+{% block content %}
+<section id="page-calendar" class="page active">
+    <div class="calendar-header">
+      <div class="calendar-nav">
+        <button aria-label="Previous month">←</button>
+        <h2>September 2026</h2>
+        <button aria-label="Next month">→</button>
+      </div>
+      <button class="btn-add-event" data-modal="new-note">+ Add event</button>
+    </div>
+    <p class="calendar-nav-note hidden" role="status" aria-live="polite">Only September 2026 is available in this preview</p>
+
+    <div class="calendar-legend">
+      <span class="legend-item">
+        <span class="legend-swatch legend-today" aria-hidden="true"></span> Today
+      </span>
+      <span class="legend-item">
+        <span class="legend-swatch legend-dot" aria-hidden="true"></span> Has notes
+      </span>
+      <span class="legend-item">
+        <span class="legend-swatch legend-habit" aria-hidden="true"></span> Habit day
+      </span>
+      <span class="legend-item">
+        <span class="legend-swatch legend-deadline" aria-hidden="true"></span> Deadline
+      </span>
+    </div>
+
+    <div class="calendar-grid">
+      <span class="calendar-day-label">Mon</span>
+      <span class="calendar-day-label">Tue</span>
+      <span class="calendar-day-label">Wed</span>
+      <span class="calendar-day-label">Thu</span>
+      <span class="calendar-day-label">Fri</span>
+      <span class="calendar-day-label">Sat</span>
+      <span class="calendar-day-label">Sun</span>
+
+      <!-- Week 1 -->
+      <span class="calendar-day"></span>
+      <button type="button" class="calendar-day" data-date="2026-09-01">1</button>
+      <button type="button" class="calendar-day" data-date="2026-09-02">2</button>
+      <button type="button" class="calendar-day" data-date="2026-09-03">3</button>
+      <button type="button" class="calendar-day" data-date="2026-09-04">4</button>
+      <button type="button" class="calendar-day" data-date="2026-09-05">5</button>
+      <button type="button" class="calendar-day" data-date="2026-09-06">6</button>
+
+      <!-- Week 2 -->
+      <button type="button" class="calendar-day" data-date="2026-09-07">7</button>
+      <button type="button" class="calendar-day" data-date="2026-09-08">8</button>
+      <button type="button" class="calendar-day" data-date="2026-09-09">9</button>
+      <button type="button" class="calendar-day" data-date="2026-09-10">10</button>
+      <button type="button" class="calendar-day" data-date="2026-09-11">11</button>
+      <button type="button" class="calendar-day" data-date="2026-09-12">12</button>
+      <button type="button" class="calendar-day" data-date="2026-09-13">13</button>
+
+      <!-- Week 3 -->
+      <button type="button" class="calendar-day has-habit" data-date="2026-09-14">14</button>
+      <button type="button" class="calendar-day has-habit" data-date="2026-09-15">15</button>
+      <button type="button" class="calendar-day has-habit" data-date="2026-09-16">16</button>
+      <button type="button" class="calendar-day has-habit" data-date="2026-09-17">17</button>
+      <button type="button" class="calendar-day has-habit" data-date="2026-09-18">18</button>
+      <button type="button" class="calendar-day" data-date="2026-09-19">19</button>
+      <button type="button" class="calendar-day" data-date="2026-09-20">20</button>
+
+      <!-- Week 4 -->
+      <button type="button" class="calendar-day" data-date="2026-09-21">21</button>
+      <button type="button" class="calendar-day" data-date="2026-09-22">22</button>
+      <button type="button" class="calendar-day" data-date="2026-09-23">23</button>
+      <button type="button" class="calendar-day today" data-date="2026-09-24" aria-current="date">24</button>
+      <button type="button" class="calendar-day has-event" data-date="2026-09-25">25</button>
+      <button type="button" class="calendar-day" data-date="2026-09-26">26</button>
+      <button type="button" class="calendar-day has-event" data-date="2026-09-27">27</button>
+
+      <!-- Week 5 -->
+      <button type="button" class="calendar-day has-event has-deadline" data-date="2026-09-28">28</button>
+      <button type="button" class="calendar-day has-event has-deadline" data-date="2026-09-29">29</button>
+      <button type="button" class="calendar-day" data-date="2026-09-30">30</button>
+      <span class="calendar-day"></span>
+      <span class="calendar-day"></span>
+      <span class="calendar-day"></span>
+      <span class="calendar-day"></span>
+    </div>
+
+    <div class="calendar-day-detail">
+      <h3>Wednesday 24 Sept</h3>
+      <button class="btn-add-inline" data-modal="new-note">+ Add</button>
+      <div class="calendar-event">
+        <span class="schedule-time">12:00 pm</span>
+        <span>Lunch with Esgi</span>
+      </div>
+      <div class="calendar-event">
+        <span class="schedule-time">7:00 pm</span>
+        <span>Movie night with Boris</span>
+      </div>
+    </div>
+</section>
+{% endblock %}

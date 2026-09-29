@@ -1,0 +1,207 @@
+/*
+  Calyx Planner — Settings page
+*/
+
+.settings-header h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-xl);
+  color: var(--text-primary);
+  margin-bottom: var(--sp-xs);
+}
+
+.settings-header .subtitle {
+  font-family: var(--font-hand);
+  font-size: var(--fs-md);
+  color: var(--accent-primary);
+  margin-bottom: var(--sp-lg);
+}
+
+.settings-section {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  padding: var(--sp-md);
+  margin-bottom: var(--sp-md);
+}
+
+.settings-section h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-base);
+  color: var(--text-primary);
+  margin-bottom: var(--sp-sm);
+  padding-bottom: var(--sp-xs);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-sm);
+  padding: var(--sp-sm) 0;
+  font-size: var(--fs-base);
+  min-height: 44px;
+}
+
+.settings-row label {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.settings-row input,
+.settings-row select {
+  min-height: 44px;
+  padding: 0 var(--sp-sm);
+  border: 1.5px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: var(--fs-base);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.settings-row input:focus,
+.settings-row select:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-primary) 20%, transparent);
+}
+
+/* ===== Theme picker — Cottagecore / Midnight Garden / System ===== */
+.theme-picker {
+  display: flex;
+  gap: var(--sp-xs);
+  padding: var(--sp-md) 0;
+}
+
+.theme-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-height: 68px;
+  padding: var(--sp-sm);
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-soft);
+  background: var(--bg-base);
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.theme-option svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.5;
+}
+
+.theme-option:hover {
+  background: var(--bg-raised);
+}
+
+.theme-option.active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: var(--accent-on);
+}
+
+/* ===== Toggle switch ===== */
+.toggle {
+  position: relative;
+  width: 44px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle .slider {
+  position: absolute;
+  inset: 0;
+  background: var(--border-strong);
+  border-radius: var(--radius-full);
+  transition: background 0.2s ease;
+  cursor: pointer;
+}
+
+.toggle .slider::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  left: 3px;
+  bottom: 3px;
+  background: var(--bg-raised);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.2s ease;
+}
+
+.toggle input:checked + .slider {
+  background: var(--accent-primary);
+}
+
+.toggle input:checked + .slider::before {
+  transform: translateX(18px);
+}
+
+.toggle input:focus-visible + .slider {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.settings-note {
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  background: var(--bg-base);
+  border: 1px dashed var(--border-soft);
+  padding: var(--sp-sm) var(--sp-md);
+  border-radius: var(--radius-sm);
+  margin-top: var(--sp-sm);
+}
+
+.settings-danger {
+  display: flex;
+  gap: var(--sp-md);
+  margin-top: var(--sp-lg);
+  flex-wrap: wrap;
+}
+
+.btn-signout {
+  min-height: 44px;
+  padding: 0 var(--sp-md);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+  transition: background 0.15s ease;
+}
+
+.btn-signout:hover {
+  background: var(--bg-card);
+}
+
+.btn-delete {
+  min-height: 44px;
+  padding: 0 var(--sp-md);
+  color: var(--accent-secondary);
+  border: 1.5px solid var(--accent-secondary);
+  border-radius: var(--radius-full);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  transition: background 0.15s ease;
+}
+
+.btn-delete:hover {
+  background: color-mix(in srgb, var(--accent-secondary) 10%, transparent);
+}

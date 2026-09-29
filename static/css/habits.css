@@ -1,0 +1,121 @@
+/*
+  Calyx Planner — Habits page
+  Shares primary accent with Today & Calendar (same role, per Section 9).
+*/
+
+.habits-header {
+  margin-bottom: var(--sp-lg);
+}
+
+.habits-header h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-xl);
+  color: var(--text-primary);
+}
+
+.habits-header .subtitle {
+  font-family: var(--font-hand);
+  font-size: var(--fs-md);
+  color: var(--accent-primary);
+}
+
+.habit-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  padding: var(--sp-md);
+  margin-bottom: var(--sp-md);
+}
+
+.habit-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-xs);
+}
+
+.habit-card-header h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-base);
+  color: var(--text-primary);
+}
+
+.habit-streak {
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.habit-status {
+  display: inline-block;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--accent-primary);
+  margin-bottom: var(--sp-xs);
+}
+
+.habit-week-label {
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  margin-top: var(--sp-sm);
+}
+
+.habit-week {
+  display: flex;
+  gap: var(--sp-sm);
+  margin: var(--sp-sm) 0;
+}
+
+.habit-day {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  background: var(--day-circle-bg);   /* was var(--border-soft) */
+  color: var(--text-secondary);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.habit-day.done {
+  background: var(--accent-primary);
+  color: var(--accent-on);
+}
+
+.habit-reminder {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  margin-top: var(--sp-xs);
+}
+
+.habit-edit-btn {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--text-secondary);
+  min-height: 32px;
+  padding: 0 var(--sp-sm);
+  margin-top: var(--sp-xs);
+  border-radius: var(--radius-full);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.habit-edit-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-raised);
+}
+
+.habits-footer {
+  font-family: var(--font-hand);
+  font-size: var(--fs-md);
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: var(--sp-md);
+}

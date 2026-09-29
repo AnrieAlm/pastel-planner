@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Grocery list{% endblock %}
+
+{# The page itself. The section id keeps the page CSS working. #}
+{% block content %}
+<section id="page-grocery" class="page active">
+    <div class="grocery-header">
+      <div>
+        <h2>Grocery list</h2>
+        <span class="subtitle">running list — tell Sinéad to add anything</span>
+      </div>
+      <button class="btn-add-grocery" data-modal="grocery-item">+ Add</button>
+    </div>
+
+    <div class="grocery-nudge">
+      <span aria-hidden="true">🧠</span>
+      <div>
+        <strong>Sinéad:</strong> Chicken's been on your list every Thursday for 3 weeks. Added it automatically.
+        <br />
+        <button data-close-nudge>Got it</button>
+      </div>
+    </div>
+
+    <div class="grocery-list">
+      <h3>To get</h3>
+      <label class="grocery-item"><input type="checkbox" /> Chicken</label>
+      <label class="grocery-item"><input type="checkbox" /> Oat milk</label>
+      <label class="grocery-item"><input type="checkbox" /> Chamomile tea bags</label>
+      <label class="grocery-item"><input type="checkbox" /> Sourdough loaf</label>
+      <label class="grocery-item checked"><input type="checkbox" checked /> Pasta</label>
+    </div>
+
+    <div class="grocery-actions">
+      <button>Clear done items</button>
+      <button>🔊 Read list aloud</button>
+    </div>
+</section>
+{% endblock %}

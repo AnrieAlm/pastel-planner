@@ -1,0 +1,240 @@
+/*
+  Calyx Planner — Calendar page
+  Primary accent = header/button/Coming-up family (Today, Habits).
+  Calendar's own date-marking system (today / hover / selected) uses
+  --calendar-mark and --calendar-mark-tint instead of the accent roles —
+  a dedicated dusty-rose pairing tuned specifically for this page.
+  Quaternary accent = habit ring / deadline marker (Calendar secondary role).
+*/
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-md);
+  margin-bottom: var(--sp-md);
+  flex-wrap: wrap;
+}
+
+.calendar-header h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-lg);
+  color: var(--text-primary);
+}
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+
+.calendar-nav-note {
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  margin: -4px 0 var(--sp-sm);
+  transition: opacity 0.2s ease;
+}
+.calendar-nav-note.hidden {
+  display: none;
+}
+
+.calendar-nav button {
+  font-size: var(--fs-md);
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.calendar-nav button:hover {
+  background: var(--calendar-mark-tint);
+  color: var(--text-primary);
+}
+
+.btn-add-event {
+  min-height: 44px;
+  padding: 0 var(--sp-md);
+  background: var(--accent-secondary);
+  color: var(--accent-on);
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.15s var(--ease-soft), box-shadow 0.15s var(--ease-soft), filter 0.15s ease;
+}
+
+.btn-add-event:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift);
+  filter: brightness(0.96);
+}
+
+/* ===== Legend ===== */
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-md);
+  margin-bottom: var(--sp-md);
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.legend-today { background: var(--calendar-mark); }
+.legend-dot { background: var(--accent-primary); width: 6px; height: 6px; border-radius: var(--radius-full); }
+.legend-habit { border: 1.5px solid var(--calendar-secondary); background: transparent; }
+.legend-deadline { background: var(--calendar-secondary); border-radius: var(--radius-full); width: 6px; height: 6px; }
+
+/* ===== Month grid ===== */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  margin-bottom: var(--sp-lg);
+  background: var(--calendar-bg);
+  padding: var(--sp-sm);
+  border-radius: var(--radius-md);
+}
+
+.calendar-day-label {
+  text-align: center;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--calendar-text-secondary);
+  padding: var(--sp-xs);
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-sm);
+  font-family: inherit;
+  color: var(--calendar-text);
+  border-radius: var(--radius-sm);
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.calendar-day:empty {
+  cursor: default;
+}
+
+.calendar-day:not(:empty):hover {
+  background: color-mix(in srgb, var(--calendar-mark-tint) 55%, var(--bg-base));
+  color: var(--text-primary);
+}
+
+.calendar-day:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.calendar-day.today {
+  background: var(--calendar-mark);
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* Clicked/viewing date — outline only, so .today stays the visually
+   stronger mark and a selected-but-not-today date doesn't get confused
+   for the actual current date */
+.calendar-day.selected {
+  outline: 2px solid var(--calendar-mark);
+  outline-offset: -2px;
+}
+
+/* dot = has notes */
+.calendar-day.has-event::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--accent-primary);
+  margin-top: 3px;
+}
+
+/* ring = has an active habit that day — small corner mark, not a
+   full-cell border, so it can't be misread as a multi-day range */
+.calendar-day.has-habit::before {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--calendar-secondary);
+  background: transparent;
+}
+
+/* deadline marker = corner dot */
+.calendar-day.has-deadline::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--calendar-secondary);
+}
+
+/* ===== Day detail panel — stacked below the grid on every screen size ===== */
+.calendar-day-detail {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  padding: var(--sp-md);
+}
+
+.calendar-day-detail h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-base);
+  color: var(--text-primary);
+  margin-bottom: var(--sp-sm);
+}
+
+.calendar-day-detail .btn-add-inline {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--accent-primary);
+  min-height: 32px;
+  margin-bottom: var(--sp-sm);
+}
+
+.calendar-day-detail .btn-add-inline:hover {
+  text-decoration: underline;
+}
+
+.calendar-event {
+  display: flex;
+  gap: var(--sp-sm);
+  padding: var(--sp-xs) 0;
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+}

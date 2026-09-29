@@ -1,0 +1,277 @@
+/*
+  Calyx Planner — Modal system (shared by all "+" sheets and edit modals)
+*/
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--text-primary) 45%, transparent);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 1000;
+  padding: 0;
+}
+
+@media (min-width: 701px) {
+  .modal-overlay {
+    align-items: center;
+    padding: var(--sp-md);
+  }
+}
+
+.modal-content {
+  background: var(--bg-raised);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-top: 2px solid var(--border-soft);
+  box-shadow: var(--shadow-lift);
+  padding: var(--sp-lg);
+  width: 100%;
+  max-width: 420px;
+  max-height: 85dvh;
+  overflow-y: auto;
+  position: relative;
+  padding-bottom: calc(var(--sp-lg) + env(safe-area-inset-bottom, 0px));
+  animation: slideUp 0.25s ease-out;
+}
+
+@media (min-width: 701px) {
+  .modal-content {
+    border-radius: var(--radius-lg);
+    border-top: none;
+  }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.modal-close {
+  position: absolute;
+  top: var(--sp-sm);
+  right: var(--sp-sm);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.modal-close:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.modal-close svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.5;
+}
+
+.modal-content h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-lg);
+  color: var(--text-primary);
+  margin-bottom: var(--sp-md);
+  padding-right: var(--sp-2xl);
+}
+
+.modal-content label {
+  display: block;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: var(--sp-xs);
+}
+
+.modal-content input,
+.modal-content select,
+.modal-content textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--sp-md);
+  border: 1.5px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--sp-md);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: var(--fs-base);
+  font-family: var(--font-body);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.modal-content input:focus,
+.modal-content select:focus,
+.modal-content textarea:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-primary) 20%, transparent);
+}
+
+.modal-content textarea {
+  resize: vertical;
+  min-height: 80px;
+  padding: var(--sp-sm) var(--sp-md);
+}
+
+.modal-content input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-right: var(--sp-xs);
+  accent-color: var(--accent-primary);
+  vertical-align: middle;
+}
+
+/* ===== Colour picker row — same 3 tokens as post-its & notes ===== */
+.colour-options {
+  display: flex;
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-md);
+}
+
+.colour-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.colour-dot:hover {
+  transform: scale(1.08);
+}
+
+.colour-dot.selected {
+  border-color: var(--text-primary);
+}
+
+.colour-dot:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.colour-dot.colour-1 { background: var(--postit-1); }
+.colour-dot.colour-2 { background: var(--postit-2); }
+.colour-dot.colour-3 { background: var(--postit-3); }
+.colour-dot.colour-4 { background: var(--postit-4); }
+.colour-dot.colour-5 { background: var(--postit-5); }
+/* ===== Day picker ===== */
+.day-picker {
+  display: flex;
+  gap: var(--sp-xs);
+  margin-bottom: var(--sp-md);
+  flex-wrap: wrap;
+}
+
+.day-picker button {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 var(--sp-xs);
+  border-radius: var(--radius-full);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  background: var(--border-soft);
+  color: var(--text-secondary);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.day-picker button.active {
+  background: var(--accent-primary);
+  color: var(--accent-on);
+}
+
+/* ===== Modal action buttons ===== */
+.modal-actions {
+  display: flex;
+  gap: var(--sp-sm);
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: var(--sp-md);
+}
+
+.btn-modal-primary,
+.btn-modal-danger,
+.btn-modal-secondary {
+  min-height: 48px;
+  padding: 0 var(--sp-lg);
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  transition: transform 0.15s var(--ease-soft), box-shadow 0.15s var(--ease-soft), filter 0.15s ease;
+}
+
+.btn-modal-primary {
+  background: var(--accent-primary);
+  color: var(--accent-on);
+  box-shadow: var(--shadow-soft);
+}
+
+.btn-modal-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift);
+  filter: brightness(0.96);
+}
+
+.btn-modal-danger {
+  background: transparent;
+  color: var(--accent-secondary);
+  border: 1.5px solid var(--accent-secondary);
+}
+
+.btn-modal-danger:hover {
+  background: color-mix(in srgb, var(--accent-secondary) 10%, transparent);
+}
+
+.btn-modal-secondary {
+  background: transparent;
+  border: 1.5px solid var(--border-strong);
+  color: var(--text-primary);
+}
+
+.btn-modal-secondary:hover {
+  background: var(--bg-card);
+}
+
+/* ===== More sheet (bottom-nav overflow: Routine, Habits, Grocery, Bucket List, Settings) ===== */
+.more-sheet-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.more-sheet-link {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  min-height: 48px;
+  padding: 0 var(--sp-sm);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.more-sheet-link:hover {
+  background: var(--bg-card);
+}
+
+.more-sheet-link:active {
+  transform: translateY(1px);
+}
+
+.more-sheet-link:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.more-sheet-link svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
