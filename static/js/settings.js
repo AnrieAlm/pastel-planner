@@ -123,10 +123,7 @@ const Settings = {
     deleteBtn?.addEventListener('click', () => Modals.open('delete-account'));
 
     const signoutBtn = document.querySelector('.btn-signout');
-    signoutBtn?.addEventListener('click', () => {
-      // Stage 2 replaces this with Firebase signOut()
-      window.location.href = '/login';
-    });
+    signoutBtn?.addEventListener('click', () => this.signOut());
 
     this.initDeleteAccountModal();
   },
@@ -149,9 +146,20 @@ const Settings = {
         Modals.close();
       } else if (confirmBtn) {
         Modals.close();
-        document.getElementById('app-shell')?.classList.add('hidden');
-        document.getElementById('auth-screen')?.classList.remove('hidden');
+        // Real account deletion arrives in a later stage; until then this
+        // only signs you out and does not erase anything.
+        this.signOut();
       }
     });
+  },
+
+  // Signs out of Firebase (clears the login cookie), then shows the login page
+  async signOut() {
+    try {
+      await window.calyxAuth?.signOutUser();
+    } catch (error) {
+      console.error('Sign out problem:', error);
+    }
+    window.location.href = '/login';
   }
 };
