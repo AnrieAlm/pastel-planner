@@ -1,6 +1,8 @@
 # Calyx Planner - Stage 1: every page is served by FastAPI + Jinja2 with mock data.
 # No login or database yet; those arrive in Stage 2.
 
+import time
+
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -14,6 +16,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Tell Jinja2 where the HTML templates live
 templates = Jinja2Templates(directory="templates")
+
+# A version number that changes every time the server restarts (every deploy).
+# base.html adds it to the CSS/JS links (style.css?v=123) so phones and
+# browsers always fetch the new files instead of showing an old cached copy.
+templates.env.globals["assetVersion"] = str(int(time.time()))
 
 
 # Small helper: render one template. "section" tells base.html which
