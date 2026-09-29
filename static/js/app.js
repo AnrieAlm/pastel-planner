@@ -14,11 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
 const App = {
   init() {
     EmojiIcons.apply();
-    // The sidebar and bottom nav come from base.html, so give them their icons
-    const sidebar = document.getElementById('sidebar');
-    const bottomNav = document.getElementById('bottom-nav');
-    if (sidebar) NavIcons.apply(sidebar);
-    if (bottomNav) NavIcons.apply(bottomNav);
+    // Give every nav-icon placeholder on the page its real icon
+    NavIcons.apply(document);
 
     Navigation.init();
     Auth.init();
