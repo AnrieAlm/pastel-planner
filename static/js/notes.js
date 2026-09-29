@@ -9,6 +9,7 @@ const Notes = {
     this.initFilters();
     this.initNoteCards();
     this.initForms();
+    this.initFinishBy();
     this.showUndoIfNeeded();
     this.initCalendarButtons();
   },
@@ -23,9 +24,10 @@ const Notes = {
     });
   },
 
-  // Clicking a post-it opens the edit sheet, then fills it with that note's details
+  // Clicking a note (a post-it here, or a row on the Today page) opens the edit sheet,
+  // then fills it with that note's details
   initNoteCards() {
-    document.querySelectorAll('.postit[data-note-id]').forEach(card => {
+    document.querySelectorAll('[data-modal="edit-note"][data-note-id]').forEach(card => {
       card.addEventListener('click', async (e) => {
         e.stopPropagation();
         await Modals.open('edit-note', { sourceEl: card });
@@ -40,13 +42,15 @@ const Notes = {
     if (!form) return;
     const note = card.dataset;
 
-    form.action = '/update-note/' + note.noteId;
+    form.setAttribute('action', '/update-note/' + note.noteId);
     document.getElementById('note-title').value = note.title;
     document.getElementById('note-content').value = note.content;
     document.getElementById('note-urgent').checked = note.urgent === 'true';
     document.getElementById('note-date').value = note.date;
     document.getElementById('note-time').value = note.time;
     document.getElementById('note-deadline').value = note.deadline;
+    document.getElementById('note-finish-by').value = note.finishBy || '';
+    this.syncFinishBy(form);
 
     const dot = form.querySelector('.colour-dot.colour-' + note.color);
     if (dot) Modals.selectColourDot(dot);
@@ -56,6 +60,51 @@ const Notes = {
     doneBtn.setAttribute('formaction', '/toggle-done/' + note.noteId);
     doneBtn.textContent = note.done === 'true' ? 'Mark not done' : 'Mark done';
     document.getElementById('note-delete-btn').setAttribute('formaction', '/delete-note/' + note.noteId);
+  },
+
+  // The "When do you want to have it done?" block only shows once a deadline is set
+  syncFinishBy(form) {
+    const deadline = form.querySelector('input[name="deadline"]');
+    const block = form.querySelector('.finish-by-block');
+    if (!deadline || !block) return;
+    block.hidden = !deadline.value;
+    const finishBy = form.querySelector('input[name="finish_by"]');
+    finishBy.max = deadline.value || '';
+    if (!deadline.value) finishBy.value = '';
+  },
+
+  // Chips: 1 day / 3 days / 1 week before the deadline, or type your own date
+  initFinishBy() {
+    document.addEventListener('input', (e) => {
+      if (e.target.matches('input[name="deadline"]')) {
+        this.syncFinishBy(e.target.closest('form'));
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      const chip = e.target.closest('.finish-chip');
+      if (!chip) return;
+      const form = chip.closest('form');
+      const deadline = form.querySelector('input[name="deadline"]').value;
+      const finishBy = form.querySelector('input[name="finish_by"]');
+
+      if (chip.dataset.days === 'custom') {
+        finishBy.focus();
+        return;
+      }
+      if (!deadline) return;
+
+      // Count back from the deadline, but never earlier than today
+      const [y, m, d] = deadline.split('-').map(Number);
+      const picked = new Date(y, m - 1, d - Number(chip.dataset.days));
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const result = picked < todayStart ? todayStart : picked;
+      const pad = (n) => String(n).padStart(2, '0');
+      finishBy.value = `${result.getFullYear()}-${pad(result.getMonth() + 1)}-${pad(result.getDate())}`;
+
+      form.querySelectorAll('.finish-chip').forEach(c => c.classList.toggle('selected', c === chip));
+    });
   },
 
   // Just before a note form is sent, copy in the chosen colour and the page to come back to
