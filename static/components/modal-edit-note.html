@@ -1,36 +1,45 @@
 <button class="modal-close" data-close-modal aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-width="1.5" stroke-linecap="square"/></svg></button>
 <h3>Edit note</h3>
 
-<label for="note-title">Title</label>
-<input type="text" id="note-title" value="Pick up herbs" />
+<form method="post" id="edit-note-form" action="/update-note/">
+  <input type="hidden" name="next" value="/notes" />
+  <input type="hidden" name="color" value="1" />
 
-<label for="note-content">Notes</label>
-<textarea id="note-content">Chamomile, lavender, rosemary</textarea>
+  <label for="note-title">Title</label>
+  <input type="text" id="note-title" name="title" maxlength="200" required />
 
-<label id="note-colour-label">Colour</label>
-<div class="colour-options" role="group" aria-labelledby="note-colour-label">
-  <button type="button" class="colour-dot colour-1 selected" aria-label="Honey cream" aria-pressed="true"></button>
-  <button type="button" class="colour-dot colour-2" aria-label="Dried rose" aria-pressed="false"></button>
-  <button type="button" class="colour-dot colour-3" aria-label="Faded sage" aria-pressed="false"></button>
-  <button type="button" class="colour-dot colour-4" aria-label="Lilac" aria-pressed="false"></button>
-  <button type="button" class="colour-dot colour-5" aria-label="Powder blue" aria-pressed="false"></button>
-</div>
+  <label for="note-content">Notes</label>
+  <textarea id="note-content" name="content" maxlength="2000"></textarea>
 
-<label style="display:flex; align-items:center; gap:var(--sp-xs);">
-  <input type="checkbox" id="note-urgent" /> Urgent
-</label>
+  <label id="note-colour-label">Colour</label>
+  <div class="colour-options" role="group" aria-labelledby="note-colour-label">
+    <button type="button" class="colour-dot colour-1 selected" aria-label="Honey cream" aria-pressed="true"></button>
+    <button type="button" class="colour-dot colour-2" aria-label="Dried rose" aria-pressed="false"></button>
+    <button type="button" class="colour-dot colour-3" aria-label="Faded sage" aria-pressed="false"></button>
+    <button type="button" class="colour-dot colour-4" aria-label="Lilac" aria-pressed="false"></button>
+    <button type="button" class="colour-dot colour-5" aria-label="Powder blue" aria-pressed="false"></button>
+  </div>
 
-<label for="note-datetime">Date &amp; time</label>
-<input type="datetime-local" id="note-datetime" />
+  <label style="display:flex; align-items:center; gap:var(--sp-xs);">
+    <input type="checkbox" id="note-urgent" name="urgent" /> Urgent
+  </label>
 
-<label for="note-deadline">Deadline</label>
-<input type="date" id="note-deadline" />
+  <label for="note-date">Date</label>
+  <input type="date" id="note-date" name="date" />
 
-<div class="modal-actions">
-  <button class="btn-modal-secondary">📅 Google Calendar</button>
-  <button class="btn-modal-secondary">⬇ Download .ics</button>
-</div>
-<div class="modal-actions">
-  <button class="btn-modal-primary">Save</button>
-  <button class="btn-modal-danger">Delete</button>
-</div>
+  <label for="note-time">Time (optional)</label>
+  <input type="time" id="note-time" name="time" />
+
+  <label for="note-deadline">Deadline</label>
+  <input type="date" id="note-deadline" name="deadline" />
+
+  <div class="modal-actions">
+    <button type="button" class="btn-modal-secondary" data-note-action="gcal">📅 Google Calendar</button>
+    <button type="button" class="btn-modal-secondary" data-note-action="ics">⬇ Download .ics</button>
+  </div>
+  <div class="modal-actions">
+    <button type="submit" class="btn-modal-primary">Save</button>
+    <button type="submit" class="btn-modal-secondary" id="note-done-btn" formnovalidate>Mark done</button>
+    <button type="submit" class="btn-modal-danger" id="note-delete-btn" formnovalidate>Delete</button>
+  </div>
+</form>
