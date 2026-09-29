@@ -42,6 +42,14 @@ const Today = {
     input.addEventListener('input', syncSubmitState);
     syncSubmitState();
 
+    // Let the box grow as you type (up to the max-height in the CSS), so
+    // text is never cut off and there is no scrollbar for short notes
+    const autoGrow = () => {
+      input.style.height = 'auto';
+      input.style.height = input.scrollHeight + 'px';
+    };
+    input.addEventListener('input', autoGrow);
+
     // Ctrl/Cmd+Enter submits without reaching for the mouse
     input.addEventListener('keydown', (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
@@ -102,6 +110,7 @@ const Today = {
       // default state so a leftover "urgent" selection doesn't silently
       // carry over into whatever gets typed next
       input.value = '';
+      input.style.height = 'auto';
       submitBtn.disabled = true;
       suggestions?.classList.add('hidden');
       document.querySelectorAll('.suggestion-chip').forEach(chip => {
