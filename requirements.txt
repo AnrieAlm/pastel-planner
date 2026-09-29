@@ -1,7 +1,9 @@
 fastapi
 uvicorn[standard]
 jinja2
+python-multipart
 pymongo
 google-auth
 requests
 cachecontrol
+tzdata
