@@ -12,50 +12,40 @@
       <button class="btn-new-note" data-modal="new-note">+ New note</button>
     </div>
 
+    {# One chip per filter. The server highlights the active one. #}
     <div class="notes-filters" role="group" aria-label="Filter notes">
-      <button class="active" aria-pressed="true">All</button>
-      <button aria-pressed="false">Undated</button>
-      <button aria-pressed="false">Dated</button>
-      <button aria-pressed="false">Urgent</button>
-      <button aria-pressed="false">Done</button>
+      {% for key, label in [("all", "All"), ("undated", "Undated"), ("dated", "Dated"), ("urgent", "Urgent"), ("done", "Done")] %}
+      <button type="button" data-filter="{{ key }}"
+              class="{% if activeFilter == key %}active{% endif %}"
+              aria-pressed="{{ 'true' if activeFilter == key else 'false' }}">{{ label }}</button>
+      {% endfor %}
     </div>
 
+    {# One post-it per note from MongoDB. The data-* attributes carry the note's details to the edit sheet. #}
     <div class="postit-board">
-      <button type="button" class="postit colour-1" data-modal="edit-note">
-        <h4>Pick up herbs</h4>
-        <p>Chamomile, lavender, rosemary from the market</p>
-        <span class="note-meta">Today · 9am</span>
+      {% for note in notes %}
+      <button type="button"
+              class="postit colour-{{ note.color }}{% if note.urgent %} urgent{% endif %}{% if note.done %} done{% endif %}"
+              data-modal="edit-note"
+              data-note-id="{{ note.id }}"
+              data-title="{{ note.title }}"
+              data-content="{{ note.content }}"
+              data-color="{{ note.color }}"
+              data-urgent="{{ 'true' if note.urgent else 'false' }}"
+              data-done="{{ 'true' if note.done else 'false' }}"
+              data-date="{{ note.date or '' }}"
+              data-time="{{ note.time or '' }}"
+              data-deadline="{{ note.deadline or '' }}">
+        <h4>{% if note.done %}✓ {% elif note.urgent %}⚑ {% endif %}{{ note.title }}</h4>
+        {% if note.content %}<p>{{ note.content }}</p>{% endif %}
+        <span class="note-meta">{{ note.meta }}</span>
       </button>
-
-      <button type="button" class="postit urgent colour-5" data-modal="edit-note">
-        <h4>⚑ MSc thesis chapter</h4>
-        <p>Methodology — rewrite intro section</p>
-        <span class="note-meta">Due Fri</span>
-      </button>
-
-      <button type="button" class="postit colour-2" data-modal="edit-note">
-        <h4>Griffith lecture</h4>
-        <p>RAG systems — bring laptop</p>
-        <span class="note-meta">Today · 9am</span>
-      </button>
-
-      <button type="button" class="postit colour-3" data-modal="edit-note">
-        <h4>Call Mum</h4>
-        <p>Ask about Goa apartment keys</p>
-        <span class="note-meta">Undated</span>
-      </button>
-
-      <button type="button" class="postit colour-4" data-modal="edit-note">
-        <h4>Farmers market</h4>
-        <p>Bread, honey, dried flowers</p>
-        <span class="note-meta">Sat 27 Sept</span>
-      </button>
-
-      <button type="button" class="postit done colour-5" data-modal="edit-note">
-        <h4>✓ Book train to Cork</h4>
-        <p>Done</p>
-        <span class="note-meta">Done ✓</span>
-      </button>
+      {% else %}
+      <p class="notes-empty">
+        {% if activeFilter == "all" %}Nothing here yet. Tap “+ New note” whenever something comes to mind.
+        {% else %}Nothing in this list right now.{% endif %}
+      </p>
+      {% endfor %}
     </div>
 </section>
 {% endblock %}
