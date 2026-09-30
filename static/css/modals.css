@@ -275,3 +275,17 @@
   height: 20px;
   flex-shrink: 0;
 }
+
+/* ===== Calendar links inside the sheets (Stage 5) ===== */
+a.btn-modal-primary,
+a.btn-modal-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+.modal-hint {
+  margin-top: var(--sp-md);
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+}
