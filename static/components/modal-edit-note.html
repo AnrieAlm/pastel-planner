@@ -54,10 +54,12 @@
     <input type="date" id="note-finish-by" name="finish_by" />
   </div>
 
-  <div class="modal-actions">
-    <button type="button" class="btn-modal-secondary" data-note-action="gcal">📅 Google Calendar</button>
-    <button type="button" class="btn-modal-secondary" data-note-action="ics">⬇ Download .ics</button>
+  <div class="modal-actions" id="note-calendar-actions">
+    <a class="btn-modal-secondary" id="note-gcal" href="#" target="_blank" rel="noopener noreferrer">Add to Google Calendar</a>
+    <a class="btn-modal-secondary" id="note-ics" href="#">Download .ics</a>
   </div>
+  <p class="modal-hint hidden" id="note-calendar-hint">Add a date or a deadline (and save) to put this in your calendar.</p>
+  
   <div class="modal-actions">
     <button type="submit" class="btn-modal-primary">Save</button>
     <button type="submit" class="btn-modal-secondary" id="note-done-btn" formnovalidate>Mark done</button>
