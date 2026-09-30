@@ -238,3 +238,112 @@
   font-size: var(--fs-sm);
   color: var(--text-primary);
 }
+
+/* ===== Real calendar (Stage 3c) ===== */
+
+/* Month arrows and "Back to today" are links now */
+.calendar-nav a.calendar-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-full);
+  font-size: var(--fs-md);
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.calendar-nav a.calendar-nav-link:hover {
+  background: var(--calendar-mark-tint);
+  color: var(--text-primary);
+}
+.calendar-nav a.calendar-nav-link:focus-visible,
+.calendar-today-link:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.calendar-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+.calendar-today-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--sp-xs);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--accent-primary);
+  text-decoration: none;
+}
+.calendar-today-link:hover { text-decoration: underline; }
+
+/* Each day is a link with its number and a small row of marks underneath */
+a.calendar-day { text-decoration: none; }
+.calendar-day .day-number { line-height: 1; }
+.day-marks {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 8px;
+  margin-top: 3px;
+}
+/* dot = notes, ring = habit day, diamond = deadline (different shapes, so never colour alone) */
+.mark-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+}
+.mark-ring {
+  width: 7px;
+  height: 7px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1.5px solid var(--calendar-secondary);
+}
+.mark-deadline {
+  width: 6px;
+  height: 6px;
+  background: var(--calendar-secondary);
+  transform: rotate(45deg);
+}
+.legend-deadline {
+  border-radius: 0;
+  transform: rotate(45deg);
+}
+
+/* Rows in the day panel that open the edit sheet */
+.calendar-event-btn {
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.calendar-event-btn:hover { background: var(--bg-raised); }
+.calendar-event-btn:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.calendar-event-btn.done { opacity: 0.6; text-decoration: line-through; }
+.calendar-day-detail .btn-add-inline { min-height: 44px; }
+
+/* Phone: the day's list sits below the grid. Laptop: it sits beside it. */
+@media (min-width: 1000px) {
+  .calendar-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: var(--sp-lg);
+    align-items: start;
+  }
+  .calendar-layout .calendar-grid { margin-bottom: 0; }
+  .calendar-layout .calendar-day-detail {
+    position: sticky;
+    top: var(--sp-lg);
+  }
+}
