@@ -603,3 +603,46 @@
     transition: none;
   }
 }
+
+/* ===== Real bucket list (Stage 3d) ===== */
+
+/* Message inside a category with nothing in it yet */
+.bucket-empty {
+  align-self: center;
+  padding: var(--sp-md) 0;
+  font-family: var(--font-hand);
+  font-size: var(--fs-md);
+  color: var(--text-secondary);
+}
+
+/* Cards are keyboard-friendly buttons now, so show where the focus is */
+.bucket-keepsake { cursor: pointer; }
+.bucket-keepsake:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 4px;
+  border-radius: var(--radius-md);
+}
+
+/* "Open link" inside the edit sheet */
+.bucket-open-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--accent-primary);
+  text-decoration: none;
+}
+.bucket-open-link:hover { text-decoration: underline; }
+.bucket-open-link:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
+/* Polaroids have only a caption, so the planned date / note / link goes in a small line under it */
+.bucket-polaroid-detail {
+  margin-top: 6px;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  color: var(--bkl-ink);
+  opacity: 0.75;
+  overflow-wrap: anywhere;
+}
