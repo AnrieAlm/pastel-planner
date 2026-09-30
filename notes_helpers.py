@@ -1,7 +1,8 @@
 # notes_helpers.py - reading notes from MongoDB and preparing them for the page.
 # Every query here filters by user_id, so one person can never see another person's notes.
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
+from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 from bson import ObjectId
@@ -11,7 +12,8 @@ from db import notes
 
 TITLE_MAX = 200
 CONTENT_MAX = 2000
-FILTERS = ["all", "undated", "dated", "urgent", "done"]
+FILTERS = ["all", "undated", "dated", "bucket", "urgent", "done"]
+BUCKETS = ["movies", "places", "things", "experiences"]
 
 
 # Turns the id from a web address into a MongoDB ObjectId (or None if it is nonsense)
@@ -95,6 +97,8 @@ def describeNote(note, today):
         return label
     if note.get("deadline"):
         return "Due " + dayLabel(note["deadline"], today)
+    if note.get("bucket"):
+        return "Bucket list · " + note["bucket"].capitalize()
     return "Undated"
 
 
@@ -108,6 +112,10 @@ def getNotes(userId, filterName, timezoneName):
     elif filterName == "dated":
         query.update({"done": False, "$or": [{"date": {"$ne": None}}, {"deadline": {"$ne": None}}]})
         sortBy = [("date", 1), ("time", 1), ("created_at", -1)]
+    
+    elif filterName == "bucket":
+        query.update({"done": False, "bucket": {"$in": BUCKETS}})
+    
     elif filterName == "urgent":
         query.update({"done": False, "urgent": True})
     elif filterName == "done":
@@ -275,3 +283,77 @@ def getTodayView(user):
         "todayNotes": [decorate(n, today) for n in getNotesForDay(userId, today.isoformat())],
         "upcoming": upcoming,
     }
+
+
+# ---------------------------------------------------------------------------
+# Bucket list helpers (Stage 3d)
+# ---------------------------------------------------------------------------
+
+# A bucket category must be one of the four; anything else means "not on the bucket list" (None)
+def cleanBucket(value):
+    word = (value or "").strip().lower()
+    return word if word in BUCKETS else None
+
+
+# Only normal web links are kept (http or https). Anything else, like "javascript:...", becomes None.
+def cleanLink(value):
+    text = (value or "").strip()
+    if not text or len(text) > 500 or any(ch.isspace() for ch in text):
+        return None
+    parts = urlsplit(text)
+    if parts.scheme in ("http", "https") and parts.netloc:
+        return text
+    return None
+
+
+# "https://www.imdb.com/title/x" -> "imdb.com"
+def linkHost(link):
+    host = urlsplit(link).hostname or ""
+    return host[4:] if host.startswith("www.") else host
+
+
+# "5 Oct 2026"
+def niceDate(day):
+    return f"{day.day} {day.strftime('%b %Y')}"
+
+
+# The small line on a bucket card: the planned date, else the note text, else the link's website
+def describeBucket(note):
+    if note.get("date"):
+        return "Planned for " + niceDate(date.fromisoformat(note["date"]))
+    content = (note.get("content") or "").strip()
+    if content:
+        return content.splitlines()[0][:60]
+    if note.get("link"):
+        return linkHost(note["link"])
+    return ""
+
+
+# The date something was finished, in the person's own timezone
+def formatDoneDate(completedAt, zone):
+    if not completedAt:
+        return ""
+    if completedAt.tzinfo is None:
+        completedAt = completedAt.replace(tzinfo=timezone.utc)
+    return niceDate(completedAt.astimezone(zone).date())
+
+
+# Everything the Bucket List page needs: not-done items grouped by category, plus the Done shelf
+def getBucketNotes(userId, timezoneName):
+    zone = getZone(timezoneName)
+    today = datetime.now(zone).date()
+    found = notes.find({"user_id": userId, "deleted_at": None, "bucket": {"$in": BUCKETS}}).sort("created_at", 1)
+
+    sections = {name: [] for name in BUCKETS}
+    doneItems = []
+    for note in found:
+        decorate(note, today)
+        note["detail"] = describeBucket(note)
+        if note.get("done"):
+            note["doneDate"] = formatDoneDate(note.get("completed_at"), zone)
+            doneItems.append(note)
+        else:
+            sections[note["bucket"]].append(note)
+
+    doneItems.sort(key=lambda n: n.get("completed_at") or datetime.min, reverse=True)
+    return {"sections": sections, "done": doneItems}
