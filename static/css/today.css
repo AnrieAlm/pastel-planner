@@ -668,3 +668,36 @@ button.urgent-card:focus-visible,
   color: var(--text-secondary);
   padding: var(--sp-xs) 0;
 }
+
+/* ===== Habit chips on Today are tick buttons (Stage 4) ===== */
+button.habit-chip {
+  gap: var(--sp-sm);
+  min-height: 44px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+button.habit-chip:hover { border-color: var(--accent-primary); }
+button.habit-chip:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.habit-chip-tick {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 50%;
+  color: transparent;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.habit-chip-tick svg { width: 14px; height: 14px; }
+button.habit-chip.done .habit-chip-tick {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: var(--accent-on);
+}
+.habit-chip-text { display: flex; flex-direction: column; line-height: 1.25; }
+.habit-chip-name { font-weight: 700; }
+.habit-chip-streak { font-size: var(--fs-xs); color: var(--text-secondary); }
