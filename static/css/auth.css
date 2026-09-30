@@ -139,3 +139,13 @@
 .auth-error.visible {
   display: block;
 }
+
+/* ===== App icon as the login logo ===== */
+.auth-card .auth-logo {
+  display: block;
+  width: 88px;
+  height: 88px;
+  margin: 0 auto var(--sp-md);
+  border-radius: 20px;
+  box-shadow: var(--shadow-soft);
+}
