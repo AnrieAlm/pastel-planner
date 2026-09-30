@@ -14,9 +14,9 @@ from fastapi.templating import Jinja2Templates
 from auth import checkRequest
 from calendar_helpers import getCalendarView
 from db import createIndexes, notes
-from notes_helpers import (FILTERS, CONTENT_MAX, TITLE_MAX, cleanColor, cleanDate, cleanFinishBy,
-                           cleanText, cleanTime, getNotes, getToday, getTodayView, resolveWhen,
-                           toObjectId)
+from notes_helpers import (FILTERS, CONTENT_MAX, TITLE_MAX, cleanBucket, cleanColor, cleanDate,
+                           cleanFinishBy, cleanLink, cleanText, cleanTime, getBucketNotes, getNotes,
+                           getToday, getTodayView, resolveWhen, toObjectId)
 
 
 # Runs once when the server starts: makes sure the database indexes exist
@@ -90,7 +90,7 @@ def loginPage(request: Request):
     return renderPage(request, "login.html", "login", {"reason": reason})
 
 
-# Today: real notes for urgent items, "From yesterday", today's list and the next 7 days
+# Today
 @app.get("/", response_class=HTMLResponse)
 def todayPage(request: Request):
     user, redirect = getUserOrRedirect(request)
@@ -121,6 +121,7 @@ def notesPage(request: Request):
     return renderPage(request, "notes.html", "notes",
                       {"user": user, "notes": noteList, "activeFilter": activeFilter})
 
+
 # Calendar: a month grid, with the selected day's notes shown beside or below it
 @app.get("/calendar", response_class=HTMLResponse)
 def calendarPage(request: Request):
@@ -149,13 +150,14 @@ def groceryPage(request: Request):
     return renderPage(request, "grocery.html", "grocery", {"user": user})
 
 
-# Bucket list (the URL is /bucket, the sidebar key is "bucketlist")
+# Bucket list (the URL is /bucket, the sidebar key is "bucketlist"): notes that have a bucket category
 @app.get("/bucket", response_class=HTMLResponse)
 def bucketPage(request: Request):
     user, redirect = getUserOrRedirect(request)
     if redirect:
         return redirect
-    return renderPage(request, "bucket.html", "bucketlist", {"user": user})
+    bucket = getBucketNotes(user["user_id"], user["timezone"])
+    return renderPage(request, "bucket.html", "bucketlist", {"user": user, "bucket": bucket})
 
 
 # Settings
@@ -180,12 +182,13 @@ def apiMe(request: Request):
 # ---------- Note actions (forms). Each one checks the login first, only touches
 # ---------- notes with THIS user's user_id, then redirects back with status 302.
 
-# Add a note (from the "New note" sheet or the Today capture box)
+# Add a note (from the "New note" sheet, the Today capture box or the bucket list sheet)
 @app.post("/add-note")
 def addNote(request: Request, title: str = Form(""), content: str = Form(""),
             color: str = Form("1"), urgent: str = Form(""), date: str = Form(""),
             time: str = Form(""), deadline: str = Form(""), finishBy: str = Form("", alias="finish_by"),
-            when: str = Form(""), nextUrl: str = Form("/notes", alias="next")):
+            when: str = Form(""), bucket: str = Form(""), link: str = Form(""),
+            nextUrl: str = Form("/notes", alias="next")):
     user, redirect = getUserOrRedirect(request)
     if redirect:
         return redirect
@@ -204,8 +207,8 @@ def addNote(request: Request, title: str = Form(""), content: str = Form(""),
             "created_at": datetime.now(timezone.utc),
             "date": noteDate,
             "time": cleanTime(time) if noteDate else None,
-            "bucket": None,
-            "link": None,
+            "bucket": cleanBucket(bucket),
+            "link": cleanLink(link),
             "deadline": noteDeadline,
             "finish_by": cleanFinishBy(finishBy, noteDeadline),
             "urgent": urgent == "on",
@@ -224,6 +227,7 @@ def addNote(request: Request, title: str = Form(""), content: str = Form(""),
 def updateNote(noteId: str, request: Request, title: str = Form(""), content: str = Form(""),
                color: str = Form("1"), urgent: str = Form(""), date: str = Form(""),
                time: str = Form(""), deadline: str = Form(""), finishBy: str = Form("", alias="finish_by"),
+               bucket: str = Form(""), hasBucket: str = Form("", alias="has_bucket"),
                nextUrl: str = Form("/notes", alias="next")):
     user, redirect = getUserOrRedirect(request)
     if redirect:
@@ -242,6 +246,10 @@ def updateNote(noteId: str, request: Request, title: str = Form(""), content: st
             "deadline": noteDeadline,
             "finish_by": cleanFinishBy(finishBy, noteDeadline),
         }
+        # The bucket choice is only changed if the sheet says it included one (has_bucket=1).
+        # An empty choice then means "not on the bucket list".
+        if hasBucket == "1":
+            changes["bucket"] = cleanBucket(bucket)
         # An empty title is ignored, so a note never ends up with no name
         cleanTitle = cleanText(title, TITLE_MAX)
         if cleanTitle:
@@ -249,6 +257,46 @@ def updateNote(noteId: str, request: Request, title: str = Form(""), content: st
         notes.update_one({"_id": objectId, "user_id": user["user_id"], "deleted_at": None},
                          {"$set": changes})
     return RedirectResponse(safeNext(nextUrl), status_code=302)
+
+
+# Edit a bucket list item: its title, category and link (nothing else about the note changes)
+@app.post("/set-bucket/{noteId}")
+def setBucket(noteId: str, request: Request, title: str = Form(""), bucket: str = Form(""),
+              link: str = Form(""), nextUrl: str = Form("/bucket", alias="next")):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    objectId = toObjectId(noteId)
+    if objectId is not None:
+        changes = {"link": cleanLink(link)}
+        if cleanBucket(bucket):
+            changes["bucket"] = cleanBucket(bucket)
+        cleanTitle = cleanText(title, TITLE_MAX)
+        if cleanTitle:
+            changes["title"] = cleanTitle
+        notes.update_one({"_id": objectId, "user_id": user["user_id"], "deleted_at": None},
+                         {"$set": changes})
+    return RedirectResponse(safeNext(nextUrl, "/bucket"), status_code=302)
+
+
+# "Plan it": give a note a date (an empty date takes the plan away again)
+@app.post("/set-date/{noteId}")
+def setDate(noteId: str, request: Request, date: str = Form(""),
+            nextUrl: str = Form("/bucket", alias="next")):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    objectId = toObjectId(noteId)
+    if objectId is not None:
+        newDate = cleanDate(date)
+        changes = {"date": newDate}
+        if not newDate:
+            changes["time"] = None
+        notes.update_one({"_id": objectId, "user_id": user["user_id"], "deleted_at": None},
+                         {"$set": changes})
+    return RedirectResponse(safeNext(nextUrl, "/bucket"), status_code=302)
 
 
 # Delete = set deleted_at (not a real delete) so Undo can bring the note back
