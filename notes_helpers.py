@@ -12,7 +12,7 @@ from db import notes
 
 TITLE_MAX = 200
 CONTENT_MAX = 2000
-FILTERS = ["all", "undated", "dated", "bucket", "urgent", "done"]
+FILTERS = ["all", "undated", "dated", "urgent", "done"]
 BUCKETS = ["movies", "places", "things", "experiences"]
 
 
@@ -97,8 +97,7 @@ def describeNote(note, today):
         return label
     if note.get("deadline"):
         return "Due " + dayLabel(note["deadline"], today)
-    if note.get("bucket"):
-        return "Bucket list · " + note["bucket"].capitalize()
+  
     return "Undated"
 
 
@@ -113,8 +112,7 @@ def getNotes(userId, filterName, timezoneName):
         query.update({"done": False, "$or": [{"date": {"$ne": None}}, {"deadline": {"$ne": None}}]})
         sortBy = [("date", 1), ("time", 1), ("created_at", -1)]
     
-    elif filterName == "bucket":
-        query.update({"done": False, "bucket": {"$in": BUCKETS}})
+  
     
     elif filterName == "urgent":
         query.update({"done": False, "urgent": True})
