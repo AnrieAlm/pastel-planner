@@ -5,7 +5,8 @@ from urllib.parse import parse_qsl, urlencode, urlsplit
 from uuid import uuid4
 
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from calendar_helpers import (buildGoogleCalendarLink, buildHabitIcs, buildIcs, getCalendarView,
+                              habitCalendarLink, safeFileName)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -359,6 +360,63 @@ def rolloverNote(noteId: str, request: Request, action: str = Form(""),
                          {"$set": changes})
     return RedirectResponse(safeNext(nextUrl, "/"), status_code=302)
 
+# ---------- Add to calendar. Links and files are made from the SAVED note, in the person's timezone.
+
+# Sends the .ics file for one note (it has a reminder built in)
+@app.get("/notes/{noteId}/ics")
+def noteIcs(noteId: str, request: Request):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    objectId = toObjectId(noteId)
+    note = notes.find_one({"_id": objectId, "user_id": user["user_id"], "deleted_at": None}) if objectId else None
+    content = buildIcs(note, user["timezone"]) if note else None
+    if content is None:
+        return PlainTextResponse("Not found", status_code=404)
+    return Response(content, media_type="text/calendar; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="{safeFileName(note["title"], "note")}"'})
+
+
+# Opens Google Calendar with this note filled in (the link is built on the server)
+@app.get("/notes/{noteId}/gcal")
+def noteGoogleCalendar(noteId: str, request: Request):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    objectId = toObjectId(noteId)
+    note = notes.find_one({"_id": objectId, "user_id": user["user_id"], "deleted_at": None}) if objectId else None
+    if not note:
+        return PlainTextResponse("Not found", status_code=404)
+    return RedirectResponse(buildGoogleCalendarLink(note, user["timezone"]), status_code=302)
+
+
+# The habit as a repeating .ics event
+@app.get("/habits/{habitId}/ics")
+def habitIcs(habitId: str, request: Request):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    habit = next((h for h in user.get("habits", []) if h["habit_id"] == habitId), None)
+    if not habit:
+        return PlainTextResponse("Not found", status_code=404)
+    return Response(buildHabitIcs(habit, user["timezone"]), media_type="text/calendar; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="{safeFileName(habit["name"], "habit")}"'})
+
+
+# The habit as a repeating Google Calendar event
+@app.get("/habits/{habitId}/gcal")
+def habitGoogleCalendar(habitId: str, request: Request):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    habit = next((h for h in user.get("habits", []) if h["habit_id"] == habitId), None)
+    if not habit:
+        return PlainTextResponse("Not found", status_code=404)
+    return RedirectResponse(habitCalendarLink(habit, user["timezone"]), status_code=302)
 
 # JSON route used by the Undo button (fetch). Answers 401 if not logged in.
 @app.post("/api/undo-delete/{noteId}")
