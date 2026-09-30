@@ -95,7 +95,10 @@ const Modals = {
     this.lastFocused = document.activeElement;
 
     try {
-      const res = await fetch(`/static/components/modal-${modalName}.html`);
+            // The version number (set in base.html) changes on every deploy, so a phone never keeps
+      // showing an old copy of a sheet
+      const version = document.body.dataset.assetVersion || '';
+      const res = await fetch(`/static/components/modal-${modalName}.html?v=${version}`);
       if (!res.ok) throw new Error(`Modal "${modalName}" returned ${res.status}`);
 
       this.content.innerHTML = await res.text();
