@@ -1,101 +1,129 @@
 /**
- * Calyx Planner — Habits Page
+ * Calyx Planner — Habits (the Habits page and the habit chips on Today)
+ * The server draws the habits from MongoDB. This file sends ticks to the server,
+ * updates the streak words instantly, and fills the add/edit sheet.
  */
 const Habits = {
   init() {
-    this.initDayToggles();
-    this.initCardClick();
-    this.initModalActions();
+    this.initTicks();
+    this.initSheetOpeners();
+    this.initSheetForm();
+    this.initSuggestions();
   },
 
-  // Each day circle should toggle that day's done state. This was
-  // previously inert — no way to log a habit as done from this page
-  // at all. Since .habit-card also opens the edit modal on click,
-  // stopPropagation() prevents a day-circle tap from also opening it.
-  initDayToggles() {
-    document.querySelectorAll('.habit-day').forEach(day => {
-      day.setAttribute('tabindex', '0');
-      day.setAttribute('role', 'button');
-      day.setAttribute('aria-pressed', day.classList.contains('done') ? 'true' : 'false');
+  // ---- Ticking a day (a circle on the Habits page, or a chip on Today) ----
 
-      const toggle = (e) => {
-        e.stopPropagation();
-        const isDone = day.classList.toggle('done');
-        day.setAttribute('aria-pressed', isDone ? 'true' : 'false');
-        // TODO: once backend exists, POST /api/habits/{habit_id}/log here
-      };
-
-      day.addEventListener('click', toggle);
-      day.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          toggle(e);
-        }
-      });
-    });
-  },
-
-  // .habit-card carries data-modal="edit-habit", which Modals.js's
-  // generic delegated listener already opens — but generically, with
-  // no context about *which* card. Save/Remove need to know exactly
-  // that, so this adds an explicit listener that opens the same modal
-  // itself, with the card attached as sourceEl, and stops the event
-  // from also reaching Modals' generic handler (which would otherwise
-  // immediately re-open the same modal a second time with no data).
-  initCardClick() {
-    document.querySelectorAll('.habit-card').forEach(card => {
-      card.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const name = card.querySelector('h3')?.textContent?.trim() || '';
-        Modals.open('edit-habit', { sourceEl: card, name });
-      });
-    });
-  },
-
-  // Save writes the modal's Name/Reminder-time fields back onto the
-  // card that was opened. Remove clears the slot back to empty rather
-  // than deleting the card outright — habits are a fixed 3-slot system
-  // (see project spec: "exactly 3 slots"), so a slot goes back to
-  // "unfilled" instead of the layout losing a card entirely.
-  initModalActions() {
+  initTicks() {
     document.addEventListener('click', (e) => {
-      const saveBtn = e.target.closest('#modal-content .btn-modal-primary');
-      const removeBtn = e.target.closest('#modal-content .btn-modal-danger');
-      if (!saveBtn && !removeBtn) return;
+      const button = e.target.closest('.habit-day[data-habit-id], .habit-chip[data-habit-id]');
+      if (!button || button.disabled) return;
+      this.toggleTick(button);
+    });
+  },
 
-      const card = Modals.currentData?.sourceEl;
-      if (!card || !document.getElementById('habit-name')) return; // wrong modal
+  // Changes the look straight away (so it feels instant), then tells the server.
+  // If the server says no, the look goes back.
+  async toggleTick(button) {
+    const habitId = button.dataset.habitId;
+    const day = button.dataset.date;
+    const willBeDone = button.getAttribute('aria-pressed') !== 'true';
 
-      if (saveBtn) {
-        const name = document.getElementById('habit-name')?.value?.trim();
-        const time = document.getElementById('habit-time')?.value;
-        const titleEl = card.querySelector('h3');
-        if (titleEl && name) {
-          // Keep whatever emoji prefix the card already had (e.g. "🧘 ")
-          const emojiMatch = titleEl.textContent.match(/^\S+\s/);
-          titleEl.textContent = (emojiMatch ? emojiMatch[0] : '') + name;
-        }
-        const reminderEl = card.querySelector('.habit-reminder');
-        if (reminderEl && time) {
-          const [h, m] = time.split(':');
-          const hour12 = ((+h % 12) || 12);
-          const ampm = +h < 12 ? 'am' : 'pm';
-          reminderEl.textContent = reminderEl.textContent.replace(/Reminder [\d:apm]+/i, `Reminder ${hour12}:${m} ${ampm}`);
-        }
-      } else if (removeBtn) {
-        const titleEl = card.querySelector('h3');
-        const streakEl = card.querySelector('.habit-streak');
-        const reminderEl = card.querySelector('.habit-reminder');
-        const statusEl = card.querySelector('.habit-status');
-        if (titleEl) titleEl.textContent = '+ Add a habit';
-        if (streakEl) streakEl.textContent = 'This slot is empty';
-        if (reminderEl) reminderEl.textContent = 'No reminder set';
-        if (statusEl) statusEl.textContent = 'Empty';
-        card.querySelectorAll('.habit-day').forEach(d => d.classList.remove('done'));
-        card.classList.add('habit-card-empty');
+    this.showTick(habitId, day, willBeDone);
+    try {
+      const response = await fetch('/api/habits/' + encodeURIComponent(habitId) + '/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: day, done: willBeDone })
+      });
+      if (response.status === 401) {
+        window.location.href = '/login';
+        return;
       }
+      if (!response.ok) throw new Error('save failed');
+      const result = await response.json();
+      this.showStreak(habitId, result.streakText);
+    } catch (error) {
+      this.showTick(habitId, day, !willBeDone);
+      if (typeof Today !== 'undefined') Today.toast('Couldn\u2019t save that. Please try again.');
+    }
+  },
 
-      Modals.close();
+  // Updates every button for this habit and day (the Habits page circle and the Today chip)
+  showTick(habitId, day, done) {
+    document.querySelectorAll(`[data-habit-id="${habitId}"][data-date="${day}"]`).forEach(btn => {
+      btn.classList.toggle('done', done);
+      btn.setAttribute('aria-pressed', String(done));
+      const label = btn.getAttribute('aria-label');
+      if (label && btn.classList.contains('habit-day')) {
+        btn.setAttribute('aria-label', label.replace(/, (not done|done)/, done ? ', done' : ', not done'));
+      }
+    });
+  },
+
+  showStreak(habitId, text) {
+    document.querySelectorAll(
+      `.habit-card[data-habit-id="${habitId}"] .habit-streak, .habit-chip[data-habit-id="${habitId}"] .habit-chip-streak`
+    ).forEach(el => { el.textContent = text; });
+  },
+
+  // ---- The add / edit sheet ----
+
+  // "Edit" on a filled card, or an empty slot, opens the same sheet
+  initSheetOpeners() {
+    document.addEventListener('click', async (e) => {
+      const editBtn = e.target.closest('[data-edit-habit]');
+      const newBtn = e.target.closest('[data-new-habit]');
+      if (!editBtn && !newBtn) return;
+      await Modals.open('edit-habit');
+      this.fillSheet(editBtn ? editBtn.dataset : null);
+    });
+  },
+
+  // habit is null for a new habit
+  fillSheet(habit) {
+    const form = document.getElementById('habit-form');
+    if (!form) return;
+    const isNew = !habit;
+
+    document.getElementById('habit-sheet-title').textContent = isNew ? 'Add a habit' : 'Edit habit';
+    document.getElementById('habit-id').value = isNew ? '' : habit.habitId;
+    document.getElementById('habit-name').value = isNew ? '' : habit.name;
+    document.getElementById('habit-time').value = isNew ? '' : habit.time;
+    document.getElementById('habit-active').checked = isNew ? true : habit.active === 'true';
+
+    // Ideas only help when starting from nothing; Remove only makes sense for an existing habit
+    document.getElementById('habit-suggestions').hidden = !isNew;
+    const removeBtn = document.getElementById('habit-remove');
+    removeBtn.hidden = isNew;
+    if (!isNew) removeBtn.setAttribute('formaction', '/remove-habit/' + habit.habitId);
+
+    // Day buttons: on for the habit's days (all seven for a new habit)
+    const chosen = isNew ? ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] : habit.days.split(',');
+    form.querySelectorAll('.day-picker button').forEach(btn => {
+      const on = chosen.includes(btn.dataset.day);
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-pressed', String(on));
+    });
+  },
+
+  // Just before the form is sent, copy the chosen days into the hidden field
+  initSheetForm() {
+    document.addEventListener('submit', (e) => {
+      const form = e.target.closest('#habit-form');
+      if (!form) return;
+      const days = [...form.querySelectorAll('.day-picker button.active')].map(btn => btn.dataset.day);
+      document.getElementById('habit-days-value').value = days.join(',');
+    });
+  },
+
+  // An idea chip fills in the name
+  initSuggestions() {
+    document.addEventListener('click', (e) => {
+      const chip = e.target.closest('.habit-suggestion');
+      if (!chip) return;
+      const nameInput = document.getElementById('habit-name');
+      nameInput.value = chip.textContent.trim();
+      nameInput.focus();
     });
   }
 };
