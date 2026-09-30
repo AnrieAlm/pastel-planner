@@ -368,3 +368,11 @@ a.calendar-day { text-decoration: none; }
     top: var(--sp-lg);
   }
 }
+  
+/* A touch swipe on the grid changes month (see calendar.js). No visual change is needed;
+   this just stops the browser's own page-scroll from fighting a horizontal swipe. */
+@media (hover: none) and (pointer: coarse) {
+  .calendar-grid {
+    touch-action: pan-y;
+  }
+}
