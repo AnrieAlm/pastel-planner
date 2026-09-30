@@ -1,24 +1,36 @@
 <button class="modal-close" data-close-modal aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-width="1.5" stroke-linecap="square"/></svg></button>
 <h3>Edit bucket item</h3>
 
-<label for="edit-bucket-title">Title</label>
-<input type="text" id="edit-bucket-title" value="See Northern Lights" />
+<form method="post" id="edit-bucket-form" action="/set-bucket/">
+  <input type="hidden" name="next" value="/bucket" />
 
-<label for="edit-bucket-category">Category</label>
-<select id="edit-bucket-category">
-  <option value="movies">🎬 Movies</option>
-  <option value="places">📍 Places</option>
-  <option value="things">📦 Things</option>
-  <option value="experiences" selected>✨ Experiences</option>
-</select>
+  <label for="edit-bucket-title">Title</label>
+  <input type="text" id="edit-bucket-title" name="title" maxlength="200" required />
 
-<label for="edit-bucket-link">Link (optional)</label>
-<input type="url" id="edit-bucket-link" placeholder="https://…" />
+  <label for="edit-bucket-category">Category</label>
+  <select id="edit-bucket-category" name="bucket">
+    <option value="movies">🎬 Movies</option>
+    <option value="places">📍 Places</option>
+    <option value="things">📦 Things</option>
+    <option value="experiences">✨ Experiences</option>
+  </select>
 
-<div class="modal-actions">
-  <button class="btn-modal-secondary">Plan it — add a date</button>
-</div>
-<div class="modal-actions">
-  <button class="btn-modal-primary" data-action="mark-done">Mark done</button>
-  <button class="btn-modal-danger">Remove</button>
-</div>
+  <label for="edit-bucket-link">Link (optional)</label>
+  <input type="url" id="edit-bucket-link" name="link" maxlength="500" placeholder="https://…" />
+  <a id="edit-bucket-open-link" class="bucket-open-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Open link ↗</a>
+
+  <div class="modal-actions">
+    <button type="submit" class="btn-modal-primary" id="edit-bucket-save">Save</button>
+  </div>
+
+  <label for="edit-bucket-date">Plan it: pick a day (clear it to unplan)</label>
+  <input type="date" id="edit-bucket-date" name="date" />
+  <div class="modal-actions">
+    <button type="submit" class="btn-modal-secondary" id="edit-bucket-plan" formnovalidate>Save date</button>
+  </div>
+
+  <div class="modal-actions">
+    <button type="submit" class="btn-modal-secondary" id="edit-bucket-done" formnovalidate>Mark done</button>
+    <button type="submit" class="btn-modal-danger" id="edit-bucket-remove" formnovalidate>Remove</button>
+  </div>
+</form>
