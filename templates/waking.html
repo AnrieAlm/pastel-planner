@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#FDFBF7" />
+  <title>Waking things up · Calyx Planner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Nunito:wght@400;600&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
+  {# Everything for this page is inside it, so it can be shown even when the server is asleep or you are offline #}
+  <style>
+    :root { color-scheme: light dark; --bg: #FDFBF7; --text: #3A3128; --soft: #6E6152; --accent: #5D7654; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #1A1F1C; --text: #F0EDE7; --soft: #B8B3AA; --accent: #E0C387; } }
+    * { box-sizing: border-box; margin: 0; }
+    body { min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 32px;
+           background: var(--bg); color: var(--text); font-family: 'Nunito', system-ui, sans-serif; text-align: center; }
+    main { max-width: 360px; }
+    .mark { display: block; width: 96px; height: 96px; margin: 0 auto 24px; border-radius: 22px; box-shadow: 0 4px 14px rgba(58,49,40,.16); animation: breathe 2.6s ease-in-out infinite; }
+    h1 { font-family: 'Playfair Display', Georgia, serif; font-weight: 600; font-size: 28px; margin-bottom: 8px; }
+    p { color: var(--soft); line-height: 1.6; }
+    .hand { font-family: 'Caveat', 'Segoe Script', cursive; font-size: 20px; margin-top: 16px; color: var(--accent); }
+    @keyframes breathe { 0%, 100% { transform: scale(1); opacity: .75; } 50% { transform: scale(1.08); opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .mark { animation: none; } }
+  </style>
+</head>
+<body>
+  <main role="status" aria-live="polite">
+    <img class="mark" src="/icons/icon-192.png" alt="" width="96" height="96" />
+    <h1 id="waking-title">Waking things up…</h1>
+    <p id="waking-text">Calyx Planner rests when nobody is using it, so the first visit can take a little while. Your things are safe and will be here in a moment.</p>
+    <p class="hand" id="waking-hand">one deep breath…</p>
+  </main>
+
+  <script>
+    // This page checks the server every couple of seconds and reloads the real page as soon as it answers.
+    (function () {
+      var title = document.getElementById('waking-title');
+      var text = document.getElementById('waking-text');
+      var hand = document.getElementById('waking-hand');
+      var stopped = false;
+
+      function showOffline() {
+        title.textContent = 'You’re offline';
+        text.textContent = 'Calyx Planner needs the internet to load your notes. It will reconnect on its own as soon as you’re back online.';
+        hand.textContent = 'no rush';
+      }
+      function showWaking() {
+        title.textContent = 'Waking things up…';
+        text.textContent = 'Calyx Planner rests when nobody is using it, so the first visit can take a little while. Your things are safe and will be here in a moment.';
+        hand.textContent = 'one deep breath…';
+      }
+
+      function check() {
+        if (stopped) return;
+        if (!navigator.onLine) { showOffline(); setTimeout(check, 2000); return; }
+        showWaking();
+
+        var controller = new AbortController();
+        var timer = setTimeout(function () { controller.abort(); }, 6000);
+        fetch('/health', { cache: 'no-store', signal: controller.signal })
+          .then(function (response) {
+            clearTimeout(timer);
+            if (response.ok) { stopped = true; window.location.reload(); }
+            else { setTimeout(check, 2000); }
+          })
+          .catch(function () { clearTimeout(timer); setTimeout(check, 2000); });
+      }
+
+      window.addEventListener('online', check);
+      window.addEventListener('offline', showOffline);
+      check();
+    })();
+  </script>
+</body>
+</html>
