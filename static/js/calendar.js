@@ -10,7 +10,7 @@ const Calendar = {
 
     this.initDaySelection(grid);
     this.initAddButtons();
-
+    this.initSwipe(grid);
     // Arriving with ?day=... on a phone: make sure the day's list is in view
     if (new URLSearchParams(window.location.search).has('day')) {
       this.scrollPanelIntoView();
@@ -62,6 +62,39 @@ const Calendar = {
     document.getElementById('day-detail')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   },
 
+    // Swiping left/right over the grid moves to the next/previous month, the way a phone calendar does.
+  // A vertical swipe (scrolling) is left alone.
+  initSwipe(grid) {
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+
+    grid.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      tracking = true;
+    }, { passive: true });
+
+    grid.addEventListener('touchend', (e) => {
+      if (!tracking) return;
+      tracking = false;
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = e.changedTouches[0].clientY - startY;
+
+      // Must be mostly horizontal, and past a small threshold, so an ordinary tap or a vertical
+      // scroll never gets mistaken for a swipe
+      if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.3) return;
+
+      const month = dx < 0 ? grid.dataset.nextMonth : grid.dataset.prevMonth;
+      if (month) this.navigateTo('/calendar?month=' + month);
+    }, { passive: true });
+  },
+
+  // A tiny indirection around navigating, so it is easy to test in isolation
+  navigateTo(url) {
+    window.location.href = url;
+  },
   // "+ Add event" and "+ Add on this day" open the New note sheet with the day already filled in
   initAddButtons() {
     document.addEventListener('click', async (e) => {
