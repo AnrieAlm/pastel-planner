@@ -1,4 +1,4 @@
 {# A note's details as data-* attributes, so the edit sheet can be filled in when it is tapped. #}
 {% macro noteData(note) -%}
-data-modal="edit-note" data-note-id="{{ note.id }}" data-title="{{ note.title }}" data-content="{{ note.content }}" data-color="{{ note.color }}" data-urgent="{{ 'true' if note.urgent else 'false' }}" data-done="{{ 'true' if note.done else 'false' }}" data-date="{{ note.date or '' }}" data-time="{{ note.time or '' }}" data-deadline="{{ note.deadline or '' }}" data-finish-by="{{ note.finish_by or '' }}" data-bucket="{{ note.bucket or '' }}"
+data-modal="edit-note" data-note-id="{{ note.id }}" data-title="{{ note.title }}" data-content="{{ note.content }}" data-color="{{ note.color }}" data-urgent="{{ 'true' if note.urgent else 'false' }}" data-done="{{ 'true' if note.done else 'false' }}" data-date="{{ note.date or '' }}" data-time="{{ note.time or '' }}" data-deadline="{{ note.deadline or '' }}" data-finish-by="{{ note.finish_by or '' }}"
 {%- endmacro %}
