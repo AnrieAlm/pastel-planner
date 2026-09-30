@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/_note_data.html" import noteData %}
 {% block title %}Calendar{% endblock %}
 
 {# The page itself. The section id keeps the page CSS working. #}
@@ -6,13 +7,15 @@
 <section id="page-calendar" class="page active">
     <div class="calendar-header">
       <div class="calendar-nav">
-        <button aria-label="Previous month">←</button>
-        <h2>September 2026</h2>
-        <button aria-label="Next month">→</button>
+        <a class="calendar-nav-link" href="/calendar?month={{ cal.prevMonth }}" aria-label="Previous month">←</a>
+        <h2>{{ cal.title }}</h2>
+        <a class="calendar-nav-link" href="/calendar?month={{ cal.nextMonth }}" aria-label="Next month">→</a>
       </div>
-      <button class="btn-add-event" data-modal="new-note">+ Add event</button>
+      <div class="calendar-header-actions">
+        {% if not cal.isCurrentMonth %}<a class="calendar-today-link" href="/calendar">Back to today</a>{% endif %}
+        <button type="button" class="btn-add-event" id="calendar-add-event" data-add-on="{{ cal.selected or '' }}">+ Add event</button>
+      </div>
     </div>
-    <p class="calendar-nav-note hidden" role="status" aria-live="polite">Only September 2026 is available in this preview</p>
 
     <div class="calendar-legend">
       <span class="legend-item">
@@ -29,71 +32,57 @@
       </span>
     </div>
 
-    <div class="calendar-grid">
-      <span class="calendar-day-label">Mon</span>
-      <span class="calendar-day-label">Tue</span>
-      <span class="calendar-day-label">Wed</span>
-      <span class="calendar-day-label">Thu</span>
-      <span class="calendar-day-label">Fri</span>
-      <span class="calendar-day-label">Sat</span>
-      <span class="calendar-day-label">Sun</span>
+    <div class="calendar-layout">
+      {# Weeks start on Monday. Each day is a link (so it works without JavaScript); JavaScript makes it instant. #}
+      <div class="calendar-grid">
+        <span class="calendar-day-label">Mon</span>
+        <span class="calendar-day-label">Tue</span>
+        <span class="calendar-day-label">Wed</span>
+        <span class="calendar-day-label">Thu</span>
+        <span class="calendar-day-label">Fri</span>
+        <span class="calendar-day-label">Sat</span>
+        <span class="calendar-day-label">Sun</span>
 
-      <!-- Week 1 -->
-      <span class="calendar-day"></span>
-      <button type="button" class="calendar-day" data-date="2026-09-01">1</button>
-      <button type="button" class="calendar-day" data-date="2026-09-02">2</button>
-      <button type="button" class="calendar-day" data-date="2026-09-03">3</button>
-      <button type="button" class="calendar-day" data-date="2026-09-04">4</button>
-      <button type="button" class="calendar-day" data-date="2026-09-05">5</button>
-      <button type="button" class="calendar-day" data-date="2026-09-06">6</button>
-
-      <!-- Week 2 -->
-      <button type="button" class="calendar-day" data-date="2026-09-07">7</button>
-      <button type="button" class="calendar-day" data-date="2026-09-08">8</button>
-      <button type="button" class="calendar-day" data-date="2026-09-09">9</button>
-      <button type="button" class="calendar-day" data-date="2026-09-10">10</button>
-      <button type="button" class="calendar-day" data-date="2026-09-11">11</button>
-      <button type="button" class="calendar-day" data-date="2026-09-12">12</button>
-      <button type="button" class="calendar-day" data-date="2026-09-13">13</button>
-
-      <!-- Week 3 -->
-      <button type="button" class="calendar-day has-habit" data-date="2026-09-14">14</button>
-      <button type="button" class="calendar-day has-habit" data-date="2026-09-15">15</button>
-      <button type="button" class="calendar-day has-habit" data-date="2026-09-16">16</button>
-      <button type="button" class="calendar-day has-habit" data-date="2026-09-17">17</button>
-      <button type="button" class="calendar-day has-habit" data-date="2026-09-18">18</button>
-      <button type="button" class="calendar-day" data-date="2026-09-19">19</button>
-      <button type="button" class="calendar-day" data-date="2026-09-20">20</button>
-
-      <!-- Week 4 -->
-      <button type="button" class="calendar-day" data-date="2026-09-21">21</button>
-      <button type="button" class="calendar-day" data-date="2026-09-22">22</button>
-      <button type="button" class="calendar-day" data-date="2026-09-23">23</button>
-      <button type="button" class="calendar-day today" data-date="2026-09-24" aria-current="date">24</button>
-      <button type="button" class="calendar-day has-event" data-date="2026-09-25">25</button>
-      <button type="button" class="calendar-day" data-date="2026-09-26">26</button>
-      <button type="button" class="calendar-day has-event" data-date="2026-09-27">27</button>
-
-      <!-- Week 5 -->
-      <button type="button" class="calendar-day has-event has-deadline" data-date="2026-09-28">28</button>
-      <button type="button" class="calendar-day has-event has-deadline" data-date="2026-09-29">29</button>
-      <button type="button" class="calendar-day" data-date="2026-09-30">30</button>
-      <span class="calendar-day"></span>
-      <span class="calendar-day"></span>
-      <span class="calendar-day"></span>
-      <span class="calendar-day"></span>
-    </div>
-
-    <div class="calendar-day-detail">
-      <h3>Wednesday 24 Sept</h3>
-      <button class="btn-add-inline" data-modal="new-note">+ Add</button>
-      <div class="calendar-event">
-        <span class="schedule-time">12:00 pm</span>
-        <span>Lunch with Esgi</span>
+        {% for week in cal.weeks %}{% for day in week %}{% if day %}<a class="calendar-day{% if day.isToday %} today{% endif %}{% if day.isSelected %} selected{% endif %}" href="/calendar?month={{ cal.key }}&day={{ day.iso }}" data-date="{{ day.iso }}" data-label="{{ day.label }}" aria-label="{{ day.label }}{% if day.isSelected %}, selected{% endif %}"{% if day.isToday %} aria-current="date"{% endif %}><span class="day-number">{{ day.number }}</span><span class="day-marks" aria-hidden="true">{% if day.hasNotes %}<span class="mark-dot"></span>{% endif %}{% if day.hasHabit %}<span class="mark-ring"></span>{% endif %}{% if day.hasDeadline %}<span class="mark-deadline"></span>{% endif %}</span></a>{% else %}<span class="calendar-day" aria-hidden="true"></span>{% endif %}{% endfor %}{% endfor %}
       </div>
-      <div class="calendar-event">
-        <span class="schedule-time">7:00 pm</span>
-        <span>Movie night with Boris</span>
+
+      {# One panel per day, all ready on the page so tapping a day is instant. Only the selected one is shown. #}
+      <div class="calendar-day-detail" id="day-detail" aria-live="polite">
+        {% if not cal.selected %}
+        <p class="today-empty" id="calendar-pick-day">Pick a day to see what's on.</p>
+        {% endif %}
+
+        {% for iso, panel in cal.panels.items() %}
+        <div class="day-panel" data-panel="{{ iso }}"{% if iso != cal.selected %} hidden{% endif %}>
+          <h3>{{ panel.heading }}</h3>
+          <button type="button" class="btn-add-inline" data-add-on="{{ iso }}">+ Add on this day</button>
+
+          {% for note in panel.deadlines %}
+          <button type="button" class="calendar-event calendar-event-btn" {{ noteData(note) }}>
+            <span class="schedule-time">Due</span>
+            <span>⚑ {{ note.title }}</span>
+          </button>
+          {% endfor %}
+
+          {% for note in panel.notes %}
+          <button type="button" class="calendar-event calendar-event-btn{% if note.done %} done{% endif %}" {{ noteData(note) }}>
+            <span class="schedule-time">{{ note.timeLabel }}</span>
+            <span>{{ note.title }}</span>
+          </button>
+          {% endfor %}
+
+          {% for habit in panel.habits %}
+          <div class="calendar-event">
+            <span class="schedule-time">{{ habit.timeLabel }}</span>
+            <span>{{ habit.name }} · habit</span>
+          </div>
+          {% endfor %}
+
+          {% if not panel.notes and not panel.deadlines and not panel.habits %}
+          <p class="today-empty">Nothing on this day. A free day.</p>
+          {% endif %}
+        </div>
+        {% endfor %}
       </div>
     </div>
 </section>
