@@ -701,3 +701,21 @@ button.habit-chip.done .habit-chip-tick {
 .habit-chip-text { display: flex; flex-direction: column; line-height: 1.25; }
 .habit-chip-name { font-weight: 700; }
 .habit-chip-streak { font-size: var(--fs-xs); color: var(--text-secondary); }
+
+
+
+/* ===== Real-time routine timeline (today.js moves "Now" with the clock) ===== */
+.timeline-block.done {
+  opacity: 0.55;
+}
+.timeline-block.done .timeline-time {
+  text-decoration: line-through;
+}
+.timeline-countdown {
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin-left: 4px;
+}
+.timeline-block.active .timeline-countdown {
+  color: var(--accent-primary);
+}
