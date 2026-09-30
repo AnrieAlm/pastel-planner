@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from auth import checkRequest
+from calendar_helpers import getCalendarView
 from db import createIndexes, notes
 from notes_helpers import (FILTERS, CONTENT_MAX, TITLE_MAX, cleanColor, cleanDate, cleanFinishBy,
                            cleanText, cleanTime, getNotes, getToday, getTodayView, resolveWhen,
@@ -120,14 +121,14 @@ def notesPage(request: Request):
     return renderPage(request, "notes.html", "notes",
                       {"user": user, "notes": noteList, "activeFilter": activeFilter})
 
-
-# Calendar
+# Calendar: a month grid, with the selected day's notes shown beside or below it
 @app.get("/calendar", response_class=HTMLResponse)
 def calendarPage(request: Request):
     user, redirect = getUserOrRedirect(request)
     if redirect:
         return redirect
-    return renderPage(request, "calendar.html", "calendar", {"user": user})
+    view = getCalendarView(user, request.query_params.get("month"), request.query_params.get("day"))
+    return renderPage(request, "calendar.html", "calendar", {"user": user, "cal": view})
 
 
 # Habits
