@@ -152,7 +152,8 @@ def restoreBucketItem(userId, itemId):
 
 # Everything the Bucket List page needs: to-do wishes by category, plus the Done shelf
 def getBucketItems(userId, timezoneName):
-    found = bucket_items.find({"user_id": userId, "deleted_at": None}).sort("created_at", 1)
+    found = bucket_items.find({"user_id": userId, "deleted_at": None}).sort("created_at", -1)
+
     sections = {name: [] for name in CATEGORIES}
     done = []
     for item in found:
