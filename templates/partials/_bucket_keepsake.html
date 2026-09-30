@@ -1,0 +1,52 @@
+{# One bucket list card in the shape of its category (ticket / postcard / tag / polaroid).
+   The data-* attributes let the page script fill the edit sheet when the card is tapped. #}
+{% macro keepsake(note, done=false) -%}
+<div class="bucket-keepsake{% if done %} no-animate done{% endif %}" role="button" tabindex="0"
+     aria-label="{{ note.title }}, open"
+     data-note-id="{{ note.id }}" data-title="{{ note.title }}" data-bucket="{{ note.bucket }}"
+     data-link="{{ note.link or '' }}" data-date="{{ note.date or '' }}" data-done="{{ 'true' if done else 'false' }}">
+  {% if note.bucket == "movies" %}
+  <div class="bucket-ticket">
+    {% if done %}<div class="bucket-done-stamp">Done<span class="bucket-done-stamp-date">{{ note.doneDate }}</span></div>{% endif %}
+    <div class="bucket-ticket-main">
+      <div class="bucket-keepsake-label">Movies{% if done %} · Done{% endif %}</div>
+      <div class="bucket-title">{{ note.title }}</div>
+      <div class="bucket-detail">{{ note.detail }}</div>
+      <div class="bucket-barcode"></div>
+      <div class="bucket-barcode-num">0 4 2 &nbsp;1 1 &nbsp;A D M I T</div>
+    </div>
+    <div class="bucket-ticket-perf"></div>
+    <div class="bucket-ticket-stub">ADMIT ONE</div>
+  </div>
+  {% elif note.bucket == "places" %}
+  <div class="bucket-postcard">
+    {% if done %}<div class="bucket-done-stamp">Done<span class="bucket-done-stamp-date">{{ note.doneDate }}</span></div>{% endif %}
+    <div class="bucket-postal-perf"></div>
+    <div class="bucket-postal-seal"><span class="bucket-postal-seal-mark">&#9992;</span></div>
+    <div class="bucket-keepsake-label">Places{% if done %} · Done{% endif %}</div>
+    <div class="bucket-title">{{ note.title }}</div>
+    <div class="bucket-detail">{{ note.detail }}</div>
+    <div class="bucket-postcard-divider"></div>
+  </div>
+  {% elif note.bucket == "things" %}
+  <div class="bucket-tag-wrap">
+    <div class="bucket-tag-string"></div>
+    <div class="bucket-tag">
+      {% if done %}<div class="bucket-done-stamp">Done<span class="bucket-done-stamp-date">{{ note.doneDate }}</span></div>{% endif %}
+      <div class="bucket-tag-hole"></div>
+      <div class="bucket-keepsake-label">Things{% if done %} · Done{% endif %}</div>
+      <div class="bucket-title">{{ note.title }}</div>
+      <div class="bucket-detail">{{ note.detail }}</div>
+    </div>
+  </div>
+  {% else %}
+  <div class="bucket-polaroid">
+    {% if done %}<div class="bucket-done-stamp">Done<span class="bucket-done-stamp-date">{{ note.doneDate }}</span></div>{% endif %}
+    <div class="bucket-tape"></div>
+    <div class="bucket-polaroid-photo">&#10022;</div>
+    <div class="bucket-polaroid-caption">{{ note.title }}</div>
+    {% if note.detail %}<div class="bucket-polaroid-detail">{{ note.detail }}</div>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{%- endmacro %}
