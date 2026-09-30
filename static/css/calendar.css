@@ -10,24 +10,45 @@
 .calendar-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--sp-md);
   margin-bottom: var(--sp-md);
-  flex-wrap: wrap;
 }
 
 .calendar-header h2 {
   font-family: var(--font-display);
   font-weight: 600;
+  font-size: var(--fs-xl);
+  color: var(--text-primary);
+}
+
+.calendar-header .subtitle {
+  font-family: var(--font-hand);
+  font-size: var(--fs-md);
+  color: var(--accent-secondary);
+}
+
+/* The month arrows + title + "Back to today", as their own row beneath the page header */
+.calendar-month-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-md);
+  flex-wrap: wrap;
+}
+
+.calendar-month-nav h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--fs-lg);
   color: var(--text-primary);
+  margin-right: auto;
 }
 
 .calendar-nav {
   display: flex;
   align-items: center;
   gap: var(--sp-sm);
-}
 
 .calendar-nav-note {
   font-size: var(--fs-xs);
