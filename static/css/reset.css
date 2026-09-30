@@ -32,6 +32,11 @@ img, svg {
   max-width: 100%;
 }
 
+/* The "hidden" attribute always wins, even on elements that set their own display (buttons, links, flex rows) */
+[hidden] {
+  display: none !important;
+}
+
 button, input, select, textarea {
   font: inherit;
   color: inherit;
