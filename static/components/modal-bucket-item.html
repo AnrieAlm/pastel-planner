@@ -1,14 +1,14 @@
 <button class="modal-close" data-close-modal aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-width="1.5" stroke-linecap="square"/></svg></button>
 <h3>Add to bucket list</h3>
 
-<form method="post" action="/add-note" id="new-bucket-form">
+<form method="post" action="/add-bucket" id="new-bucket-form">
   <input type="hidden" name="next" value="/bucket" />
 
   <label for="bucket-title">Title</label>
   <input type="text" id="bucket-title" name="title" maxlength="200" placeholder="e.g. Visit Kyoto" required />
 
   <label for="bucket-category">Category</label>
-  <select id="bucket-category" name="bucket">
+  <select id="bucket-category" name="category">
     <option value="movies">🎬 Movies</option>
     <option value="places">📍 Places</option>
     <option value="things">📦 Things</option>
