@@ -9,66 +9,39 @@
       <span class="subtitle">three gentle disciplines</span>
     </div>
 
-    <!-- Morning yoga -->
-    <div class="habit-card" data-modal="edit-habit">
+    {# Exactly three slots: a habit card for each filled one, an invitation for each empty one #}
+    {% for habit in hv.slots %}
+    {% if habit %}
+    <div class="habit-card{% if not habit.active %} habit-card-paused{% endif %}" data-habit-id="{{ habit.habit_id }}">
       <div class="habit-card-header">
-        <h3>🧘 Morning yoga</h3>
-        <span class="habit-streak">7 days in a row — keep going</span>
+        <h3>{{ habit.name }}</h3>
+        <span class="habit-streak" aria-live="polite">{{ habit.streakText }}</span>
       </div>
-      <span class="habit-status">Active</span>
+      <span class="habit-status">{{ 'Active' if habit.active else 'Paused' }}</span>
       <p class="habit-week-label">This week</p>
-      <div class="habit-week">
-        <span class="habit-day done">M</span>
-        <span class="habit-day done">T</span>
-        <span class="habit-day done">W</span>
-        <span class="habit-day done">T</span>
-        <span class="habit-day">F</span>
-        <span class="habit-day">S</span>
-        <span class="habit-day">S</span>
+      <div class="habit-week" role="group" aria-label="This week for {{ habit.name }}">
+        {% for day in habit.week %}
+        <button type="button"
+                class="habit-day{% if day.done %} done{% endif %}{% if not day.scheduled %} off{% endif %}{% if day.isToday %} today{% endif %}"
+                data-habit-id="{{ habit.habit_id }}" data-date="{{ day.iso }}"
+                aria-pressed="{{ 'true' if day.done else 'false' }}" aria-label="{{ day.label }}"
+                {% if day.future or not habit.active %}disabled{% endif %}>{{ day.letter }}</button>
+        {% endfor %}
       </div>
-      <span class="habit-reminder">Reminder 7:10 am · Mon–Sun · vibrate</span>
+      <span class="habit-reminder">{% if habit.timeLabel %}{{ habit.timeLabel }} · {% endif %}{{ habit.daysLabel }}</span>
+      <button type="button" class="habit-edit-btn" data-edit-habit
+              data-habit-id="{{ habit.habit_id }}" data-name="{{ habit.name }}" data-time="{{ habit.time }}"
+              data-days="{{ habit.daysValue }}" data-active="{{ 'true' if habit.active else 'false' }}"
+              aria-label="Edit {{ habit.name }}">Edit</button>
     </div>
+    {% else %}
+    <button type="button" class="habit-card habit-card-empty" data-new-habit>
+      <span class="habit-empty-title">+ Add a habit</span>
+      <span class="habit-streak">This slot is empty</span>
+    </button>
+    {% endif %}
+    {% endfor %}
 
-    <!-- Read -->
-    <div class="habit-card" data-modal="edit-habit">
-      <div class="habit-card-header">
-        <h3>📖 Read</h3>
-        <span class="habit-streak">3 days — nice rhythm</span>
-      </div>
-      <span class="habit-status">Active</span>
-      <p class="habit-week-label">This week</p>
-      <div class="habit-week">
-        <span class="habit-day done">M</span>
-        <span class="habit-day">T</span>
-        <span class="habit-day done">W</span>
-        <span class="habit-day">T</span>
-        <span class="habit-day done">F</span>
-        <span class="habit-day">S</span>
-        <span class="habit-day">S</span>
-      </div>
-      <span class="habit-reminder">Reminder 9:00 pm · Daily</span>
-    </div>
-
-    <!-- Journal -->
-    <div class="habit-card" data-modal="edit-habit">
-      <div class="habit-card-header">
-        <h3>📓 Journal</h3>
-        <span class="habit-streak">Done today ✓</span>
-      </div>
-      <span class="habit-status">Active</span>
-      <p class="habit-week-label">This week</p>
-      <div class="habit-week">
-        <span class="habit-day done">M</span>
-        <span class="habit-day done">T</span>
-        <span class="habit-day done">W</span>
-        <span class="habit-day done">T</span>
-        <span class="habit-day">F</span>
-        <span class="habit-day">S</span>
-        <span class="habit-day">S</span>
-      </div>
-      <span class="habit-reminder">Reminder 8:00 pm · Daily · routine linked</span>
-    </div>
-
-    <p class="habits-footer">3 of 3 habit slots filled — edit one above to change it</p>
+    <p class="habits-footer">{{ hv.filled }} of 3 habit slots filled{% if hv.filled == 3 %} — edit one above to change it{% endif %}</p>
 </section>
 {% endblock %}
