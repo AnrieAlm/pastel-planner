@@ -1,34 +1,46 @@
 <button class="modal-close" data-close-modal aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-width="1.5" stroke-linecap="square"/></svg></button>
-<h3>Edit habit</h3>
+<h3 id="habit-sheet-title">Edit habit</h3>
 
-<label for="habit-name">Name</label>
-<input type="text" id="habit-name" value="Morning yoga" />
+<form method="post" id="habit-form" action="/save-habit">
+  <input type="hidden" name="next" value="/habits" />
+  <input type="hidden" name="habit_id" id="habit-id" />
+  <input type="hidden" name="days" id="habit-days-value" />
 
-<label for="habit-time">Reminder time</label>
-<input type="time" id="habit-time" value="07:10" />
+  <div id="habit-suggestions" hidden>
+    <label id="habit-ideas-label">Need an idea?</label>
+    <div class="suggestion-chips" role="group" aria-labelledby="habit-ideas-label">
+      <button type="button" class="suggestion-chip habit-suggestion">Morning yoga</button>
+      <button type="button" class="suggestion-chip habit-suggestion">Read</button>
+      <button type="button" class="suggestion-chip habit-suggestion">Journal</button>
+      <button type="button" class="suggestion-chip habit-suggestion">Drink water</button>
+      <button type="button" class="suggestion-chip habit-suggestion">Stretch</button>
+      <button type="button" class="suggestion-chip habit-suggestion">Evening walk</button>
+    </div>
+  </div>
 
-<label id="habit-days-label">Days</label>
-<div class="day-picker" role="group" aria-labelledby="habit-days-label">
-  <button type="button" class="active">Mon</button>
-  <button type="button" class="active">Tue</button>
-  <button type="button" class="active">Wed</button>
-  <button type="button" class="active">Thu</button>
-  <button type="button" class="active">Fri</button>
-  <button type="button" class="active">Sat</button>
-  <button type="button" class="active">Sun</button>
-</div>
+  <label for="habit-name">Name</label>
+  <input type="text" id="habit-name" name="name" maxlength="40" placeholder="Or type your own" required />
 
-<label for="habit-routine-link">Linked routine block</label>
-<select id="habit-routine-link">
-  <option>Morning yoga (Morning weekday)</option>
-  <option>— none —</option>
-</select>
+  <label for="habit-time">Time (optional)</label>
+  <input type="time" id="habit-time" name="time" />
 
-<label style="display:flex; align-items:center; gap:var(--sp-xs);">
-  <input type="checkbox" id="habit-vibrate" checked /> Vibrate on reminder
-</label>
+  <label id="habit-days-label">Days</label>
+  <div class="day-picker" role="group" aria-labelledby="habit-days-label">
+    <button type="button" data-day="mon" class="active" aria-pressed="true">Mon</button>
+    <button type="button" data-day="tue" class="active" aria-pressed="true">Tue</button>
+    <button type="button" data-day="wed" class="active" aria-pressed="true">Wed</button>
+    <button type="button" data-day="thu" class="active" aria-pressed="true">Thu</button>
+    <button type="button" data-day="fri" class="active" aria-pressed="true">Fri</button>
+    <button type="button" data-day="sat" class="active" aria-pressed="true">Sat</button>
+    <button type="button" data-day="sun" class="active" aria-pressed="true">Sun</button>
+  </div>
 
-<div class="modal-actions">
-  <button class="btn-modal-primary">Save</button>
-  <button class="btn-modal-danger">Remove</button>
-</div>
+  <label style="display:flex; align-items:center; gap:var(--sp-xs);">
+    <input type="checkbox" id="habit-active" name="active" checked /> Active (switch off to pause it)
+  </label>
+
+  <div class="modal-actions">
+    <button type="submit" class="btn-modal-primary">Save</button>
+    <button type="submit" class="btn-modal-danger" id="habit-remove" formnovalidate hidden>Remove</button>
+  </div>
+</form>
