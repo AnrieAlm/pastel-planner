@@ -174,3 +174,16 @@
     transition: none;
   }
 }
+
+/* ===== App icon as the sidebar logo ===== */
+.sidebar-logo .sidebar-logo-img {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  box-shadow: var(--shadow-soft);
+}
+/* The collapsed rail shows only the collapse button, as before */
+#app-shell.sidebar-collapsed .sidebar-logo .sidebar-logo-img {
+  display: none;
+}
