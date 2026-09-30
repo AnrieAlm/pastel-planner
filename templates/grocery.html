@@ -7,32 +7,31 @@
     <div class="grocery-header">
       <div>
         <h2>Grocery list</h2>
-        <span class="subtitle">running list — tell Sinéad to add anything</span>
+        <span class="subtitle">running list — add anything, tick it off in the shop</span>
       </div>
       <button class="btn-add-grocery" data-modal="grocery-item">+ Add</button>
     </div>
 
-    <div class="grocery-nudge">
-      <span aria-hidden="true">🧠</span>
-      <div>
-        <strong>Sinéad:</strong> Chicken's been on your list every Thursday for 3 weeks. Added it automatically.
-        <br />
-        <button data-close-nudge>Got it</button>
-      </div>
-    </div>
-
+    {# Your own list from MongoDB: things to get first, ticked ones last #}
     <div class="grocery-list">
       <h3>To get</h3>
-      <label class="grocery-item"><input type="checkbox" /> Chicken</label>
-      <label class="grocery-item"><input type="checkbox" /> Oat milk</label>
-      <label class="grocery-item"><input type="checkbox" /> Chamomile tea bags</label>
-      <label class="grocery-item"><input type="checkbox" /> Sourdough loaf</label>
-      <label class="grocery-item checked"><input type="checkbox" checked /> Pasta</label>
+      {% for item in groceryItems %}
+      <div class="grocery-row" data-item-id="{{ item.id }}">
+        <label class="grocery-item{% if item.checked %} checked{% endif %}">
+          <input type="checkbox"{% if item.checked %} checked{% endif %} />
+          <span class="grocery-item-name">{{ item.name }}</span>
+        </label>
+        <button type="button" class="grocery-remove" aria-label="Remove {{ item.name }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      {% endfor %}
+      <p class="grocery-empty{% if groceryItems %} hidden{% endif %}">Nothing on the list. Add something whenever you think of it.</p>
     </div>
 
     <div class="grocery-actions">
-      <button>Clear done items</button>
-      <button>🔊 Read list aloud</button>
+      <button type="button" id="grocery-clear">Clear done items</button>
+      <button type="button" id="grocery-read">🔊 Read list aloud</button>
     </div>
 </section>
 {% endblock %}
