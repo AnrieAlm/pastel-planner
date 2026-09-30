@@ -1,19 +1,20 @@
-# Calyx Planner - main.py: all the routes (web addresses) of the app.
-# Pages are drawn by Jinja2 templates; every route checks the login first.
-
 import time
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qsl, urlencode, urlsplit
+from uuid import uuid4
 
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 
 from auth import checkRequest
 from calendar_helpers import getCalendarView
-from db import createIndexes, notes
+from db import createIndexes, notes, users
+from habits_helpers import (NAME_MAX, SLOT_LIMIT, cleanDays, getHabitState, getHabitsForToday,
+                            getHabitsView, setHabitLog)
 from notes_helpers import (FILTERS, CONTENT_MAX, TITLE_MAX, cleanBucket, cleanColor, cleanDate,
                            cleanFinishBy, cleanLink, cleanText, cleanTime, getBucketNotes, getNotes,
                            getToday, getTodayView, resolveWhen, toObjectId)
