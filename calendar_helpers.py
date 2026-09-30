@@ -1,12 +1,12 @@
-# calendar_helpers.py - builds the month grid and the day panels for the Calendar page.
-# Every query filters by user_id, so only this person's notes ever appear.
-
 import calendar
+import re
 from collections import defaultdict
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
+from datetime import time as clockTime
+from urllib.parse import quote, urlencode
 
 from db import notes
-from notes_helpers import cleanDate, decorate, getToday, niceTime
+from notes_helpers import cleanDate, decorate, getToday, getZone, niceTime
 
 # Habit days are saved as short names, Monday first (same order as Python's weekday())
 DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
@@ -133,3 +133,182 @@ def getCalendarView(user, monthParam, dayParam):
         "nextMonth": monthKey(nextYear, nextMonth),
         "isCurrentMonth": (year, month) == (today.year, today.month),
     }
+    
+
+# ---------------------------------------------------------------------------
+# Add to calendar (Stage 5): Google Calendar links and .ics files
+# ---------------------------------------------------------------------------
+
+GOOGLE_CALENDAR_URL = "https://calendar.google.com/calendar/render"
+NOTE_MINUTES = 30      # a timed note becomes a 30-minute event
+HABIT_MINUTES = 15     # a timed habit becomes a 15-minute event
+ICAL_DAYS = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"]
+
+
+# Works out when a note happens as a calendar event:
+#   date + time -> a timed event, date only -> all day, deadline only -> all day "Due: ..."
+# Returns (kind, start, end, title), or None if the note has no date at all.
+def getEventWindow(note, zone):
+    if note.get("date"):
+        day = date.fromisoformat(note["date"])
+        if note.get("time"):
+            start = datetime.combine(day, clockTime.fromisoformat(note["time"]), tzinfo=zone)
+            return "timed", start, start + timedelta(minutes=NOTE_MINUTES), note["title"]
+        return "allday", day, day + timedelta(days=1), note["title"]
+    if note.get("deadline"):
+        day = date.fromisoformat(note["deadline"])
+        return "allday", day, day + timedelta(days=1), "Due: " + note["title"]
+    return None
+
+
+# 20260930T140000 (local wall-clock time, no zone letter)
+def localStamp(moment):
+    return moment.strftime("%Y%m%dT%H%M%S")
+
+
+# 20260930T130000Z (the same moment in UTC)
+def utcStamp(moment):
+    return moment.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+
+# The note's extra words for the calendar entry
+def noteDetails(note):
+    parts = [note.get("content") or ""]
+    if note.get("finish_by"):
+        parts.append("Aim to finish by " + note["finish_by"])
+    if note.get("link"):
+        parts.append(note["link"])
+    return "\n".join(part for part in parts if part)
+
+
+# A link that opens Google Calendar with the event filled in, ready to save
+def buildGoogleCalendarLink(note, timezoneName):
+    zone = getZone(timezoneName)
+    params = {"action": "TEMPLATE", "details": noteDetails(note)}
+    window = getEventWindow(note, zone)
+    params["text"] = window[3] if window else note["title"]
+    if window:
+        kind, start, end, _ = window
+        if kind == "timed":
+            params["dates"] = localStamp(start) + "/" + localStamp(end)
+            params["ctz"] = timezoneName
+        else:
+            params["dates"] = start.strftime("%Y%m%d") + "/" + end.strftime("%Y%m%d")
+    return GOOGLE_CALENDAR_URL + "?" + urlencode(params, quote_via=quote)
+
+
+# ---- .ics writing helpers ----
+
+# Commas, semicolons, backslashes and new lines need a backslash in .ics text
+def icsEscape(text):
+    return (text.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,")
+            .replace("\r\n", "\\n").replace("\n", "\\n"))
+
+
+# .ics lines may not be longer than 75 bytes: longer ones continue on the next line after a space
+def icsFold(line):
+    encoded = line.encode("utf-8")
+    if len(encoded) <= 75:
+        return line
+    pieces = []
+    while len(encoded) > 75:
+        cut = 75 if not pieces else 74
+        while cut > 0 and (encoded[cut] & 0xC0) == 0x80:     # never cut in the middle of a character
+            cut -= 1
+        pieces.append(encoded[:cut].decode("utf-8"))
+        encoded = encoded[cut:]
+    pieces.append(encoded.decode("utf-8"))
+    return "\r\n ".join(pieces)
+
+
+# Wraps events into a full calendar file (lines end with CRLF, as the format requires)
+def icsWrap(eventLines):
+    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Calyx Planner//EN", "CALSCALE:GREGORIAN",
+             *eventLines, "END:VCALENDAR"]
+    return "\r\n".join(icsFold(line) for line in lines) + "\r\n"
+
+
+# A safe file name such as "Dentist.ics" (letters, numbers, dashes only)
+def safeFileName(title, fallback="calyx"):
+    cleaned = re.sub(r"[^A-Za-z0-9]+", "-", title).strip("-")[:40]
+    return (cleaned or fallback) + ".ics"
+
+
+# A .ics file for one note, with a reminder. Returns None if the note has no date or deadline.
+def buildIcs(note, timezoneName):
+    window = getEventWindow(note, getZone(timezoneName))
+    if window is None:
+        return None
+    kind, start, end, title = window
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+    lines = ["BEGIN:VEVENT", f"UID:note-{note['_id']}@calyx-planner", f"DTSTAMP:{stamp}"]
+    if kind == "timed":
+        lines += [f"DTSTART:{utcStamp(start)}", f"DTEND:{utcStamp(end)}"]
+        alarm = "-PT15M"            # 15 minutes before
+    else:
+        lines += [f"DTSTART;VALUE=DATE:{start.strftime('%Y%m%d')}", f"DTEND;VALUE=DATE:{end.strftime('%Y%m%d')}"]
+        alarm = "PT9H"              # 9am on the day
+    lines += [f"SUMMARY:{icsEscape(title)}"]
+    details = noteDetails(note)
+    if details:
+        lines.append(f"DESCRIPTION:{icsEscape(details)}")
+    lines += ["BEGIN:VALARM", "ACTION:DISPLAY", f"DESCRIPTION:{icsEscape(title)}", f"TRIGGER:{alarm}", "END:VALARM",
+              "END:VEVENT"]
+    return icsWrap(lines)
+
+
+# ---- Habits: a repeating event ----
+
+# "FREQ=DAILY" or "FREQ=WEEKLY;BYDAY=MO,WE" from the habit's days
+def habitRule(habit):
+    days = habit.get("days", [])
+    if len(days) == 7 or not days:
+        return "FREQ=DAILY"
+    return "FREQ=WEEKLY;BYDAY=" + ",".join(ICAL_DAYS[DAY_KEYS.index(day)] for day in days)
+
+
+# The first day this habit happens on or after today
+def firstHabitDay(habit, today):
+    for ahead in range(7):
+        day = today + timedelta(days=ahead)
+        if not habit.get("days") or DAY_KEYS[day.weekday()] in habit["days"]:
+            return day
+    return today
+
+
+# A Google Calendar link for a repeating habit event
+def habitCalendarLink(habit, timezoneName):
+    zone = getZone(timezoneName)
+    day = firstHabitDay(habit, datetime.now(zone).date())
+    params = {"action": "TEMPLATE", "text": habit["name"], "recur": "RRULE:" + habitRule(habit)}
+    if habit.get("time"):
+        start = datetime.combine(day, clockTime.fromisoformat(habit["time"]))
+        params["dates"] = localStamp(start) + "/" + localStamp(start + timedelta(minutes=HABIT_MINUTES))
+        params["ctz"] = timezoneName
+    else:
+        params["dates"] = day.strftime("%Y%m%d") + "/" + (day + timedelta(days=1)).strftime("%Y%m%d")
+    return GOOGLE_CALENDAR_URL + "?" + urlencode(params, quote_via=quote)
+
+
+# A .ics file for a repeating habit. Times are "floating" (no zone) so 7:10 stays 7:10 all year,
+# even when the clocks change.
+def buildHabitIcs(habit, timezoneName):
+    zone = getZone(timezoneName)
+    day = firstHabitDay(habit, datetime.now(zone).date())
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+    lines = ["BEGIN:VEVENT", f"UID:habit-{habit['habit_id']}@calyx-planner", f"DTSTAMP:{stamp}"]
+    if habit.get("time"):
+        start = datetime.combine(day, clockTime.fromisoformat(habit["time"]))
+        lines += [f"DTSTART:{localStamp(start)}", f"DTEND:{localStamp(start + timedelta(minutes=HABIT_MINUTES))}"]
+        alarm = "PT0S"              # at the start time
+    else:
+        lines += [f"DTSTART;VALUE=DATE:{day.strftime('%Y%m%d')}",
+                  f"DTEND;VALUE=DATE:{(day + timedelta(days=1)).strftime('%Y%m%d')}"]
+        alarm = "PT9H"
+    lines += [f"RRULE:{habitRule(habit)}", f"SUMMARY:{icsEscape(habit['name'])}",
+              "BEGIN:VALARM", "ACTION:DISPLAY", f"DESCRIPTION:{icsEscape(habit['name'])}", f"TRIGGER:{alarm}",
+              "END:VALARM", "END:VEVENT"]
+    return icsWrap(lines)
+    
