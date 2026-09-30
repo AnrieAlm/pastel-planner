@@ -5,16 +5,19 @@
 {# The page itself. The section id keeps the page CSS working. #}
 {% block content %}
 <section id="page-calendar" class="page active">
-    <div class="calendar-header">
-      <div class="calendar-nav">
-        <a class="calendar-nav-link" href="/calendar?month={{ cal.prevMonth }}" aria-label="Previous month">←</a>
-        <h2>{{ cal.title }}</h2>
-        <a class="calendar-nav-link" href="/calendar?month={{ cal.nextMonth }}" aria-label="Next month">→</a>
+        <div class="calendar-header">
+      <div>
+        <h2>Calendar</h2>
+        <span class="subtitle">see your days at a glance</span>
       </div>
-      <div class="calendar-header-actions">
-        {% if not cal.isCurrentMonth %}<a class="calendar-today-link" href="/calendar">Back to today</a>{% endif %}
-        <button type="button" class="btn-add-event" id="calendar-add-event" data-add-on="{{ cal.selected or '' }}">+ Add event</button>
-      </div>
+      <button type="button" class="btn-add-event" id="calendar-add-event" data-add-on="{{ cal.selected or '' }}">+ Add event</button>
+    </div>
+
+    <div class="calendar-month-nav">
+      <a class="calendar-nav-link" href="/calendar?month={{ cal.prevMonth }}" aria-label="Previous month">←</a>
+      <h3>{{ cal.title }}</h3>
+      <a class="calendar-nav-link" href="/calendar?month={{ cal.nextMonth }}" aria-label="Next month">→</a>
+      {% if not cal.isCurrentMonth %}<a class="calendar-today-link" href="/calendar">Back to today</a>{% endif %}
     </div>
 
     <div class="calendar-legend">
