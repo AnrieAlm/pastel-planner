@@ -77,32 +77,30 @@
     </div>
 
     <!-- Morning routine -->
-    <div class="morning-routine">
+       {# Morning routine: still sample blocks (the real, editable routine arrives in a later stage),
+       but "Now" is no longer a fixed label — the script below moves it with the real clock. #}
+    <div class="morning-routine" id="morning-routine">
       <h3>☀️ Morning routine</h3>
 
-      <div class="timeline-block active">
-        <span class="timeline-time">Now</span>
-        <span>🚿 Shower · 8 min left</span>
-      </div>
-      <div class="timeline-block">
+      <div class="timeline-block" data-time="07:00">
         <span class="timeline-time">7:00</span>
-        <span>☕ Wake up &amp; coffee — 10 min</span>
+        <span class="timeline-label">☕ Wake up &amp; coffee — 10 min</span>
       </div>
-      <div class="timeline-block">
+      <div class="timeline-block" data-time="07:10">
         <span class="timeline-time">7:10</span>
-        <span>🧘 Morning yoga — 20 min · habit ✓</span>
+        <span class="timeline-label">🧘 Morning yoga — 20 min · habit ✓</span>
       </div>
-      <div class="timeline-block">
+      <div class="timeline-block" data-time="07:35">
         <span class="timeline-time">7:35</span>
-        <span>🚿 Shower — 15 min</span>
+        <span class="timeline-label">🚿 Shower — 15 min</span>
       </div>
-      <div class="timeline-block">
+      <div class="timeline-block" data-time="07:50">
         <span class="timeline-time">7:50</span>
-        <span>🍳 Breakfast &amp; journal ⚡ — shortened, 9am lecture, 20 min</span>
+        <span class="timeline-label">🍳 Breakfast &amp; journal ⚡ — shortened, 9am lecture, 20 min</span>
       </div>
-      <div class="timeline-block">
+      <div class="timeline-block" data-time="08:10" data-final="true">
         <span class="timeline-time">8:10</span>
-        <span>🚶 Leave for Griffith — depart</span>
+        <span class="timeline-label">🚶 Leave for Griffith — depart</span>
       </div>
     </div>
 
