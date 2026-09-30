@@ -183,3 +183,24 @@ button.habit-card-empty:focus-visible { outline: 3px solid var(--focus-ring); ou
   font-size: var(--fs-base);
   color: var(--text-primary);
 }
+
+/* Repeating-event links on each habit card */
+.habit-calendar-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-xs) var(--sp-md);
+  margin-top: var(--sp-sm);
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+}
+.habit-calendar-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 700;
+  color: var(--accent-primary);
+  text-decoration: none;
+}
+.habit-calendar-links a:hover { text-decoration: underline; }
+.habit-calendar-links a:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
