@@ -23,6 +23,7 @@ users = db["users"]
 notes = db["notes"]
 habit_logs = db["habit_logs"]
 devices = db["devices"]
+grocery = db["grocery"]
 
 
 # Indexes make lookups fast and stop duplicates. Creating one that already exists does nothing.
@@ -31,3 +32,4 @@ def createIndexes():
     notes.create_index([("user_id", 1), ("date", 1)])
     habit_logs.create_index([("user_id", 1), ("date", 1)], unique=True)
     devices.create_index("fcm_token", unique=True)
+    grocery.create_index([("user_id", 1), ("deleted_at", 1)])
