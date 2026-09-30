@@ -6,6 +6,7 @@
  */
 const Bucketlist = {
   init() {
+    this.showUndoIfNeeded();
     this.initCategoryTabs();
     this.initItems();
     this.initDoneToggle();
@@ -48,7 +49,7 @@ const Bucketlist = {
     });
   },
 
-  // Puts the card's details into the sheet and points each button at this note
+  // Puts the card's details into the sheet and points each button at this wish
   fillEditForm(item) {
     const form = document.getElementById('edit-bucket-form');
     if (!form) return;
@@ -57,9 +58,9 @@ const Bucketlist = {
 
     form.setAttribute('action', '/set-bucket/' + id);
     document.getElementById('edit-bucket-title').value = note.title;
-    document.getElementById('edit-bucket-category').value = note.bucket;
+    document.getElementById('edit-bucket-category').value = note.category;
     document.getElementById('edit-bucket-link').value = note.link;
-    document.getElementById('edit-bucket-date').value = note.date;
+    document.getElementById('edit-bucket-date').value = note.planned;
 
     // "Open link" only shows when the item has a link
     const openLink = document.getElementById('edit-bucket-open-link');
@@ -72,12 +73,44 @@ const Bucketlist = {
 
     // "Save link" saves the same things as Save (title, category, link), so it uses the default address
     document.getElementById('edit-bucket-save-link').setAttribute('formaction', '/set-bucket/' + id);
+
     // Each extra button posts to its own address
-    document.getElementById('edit-bucket-plan').setAttribute('formaction', '/set-date/' + id);
+    document.getElementById('edit-bucket-plan').setAttribute('formaction', '/plan-bucket/' + id);
     const doneBtn = document.getElementById('edit-bucket-done');
-    doneBtn.setAttribute('formaction', '/toggle-done/' + id);
+    doneBtn.setAttribute('formaction', '/toggle-bucket/' + id);
     doneBtn.textContent = note.done === 'true' ? 'Put back on the list' : 'Mark done';
-    document.getElementById('edit-bucket-remove').setAttribute('formaction', '/delete-note/' + id);
+    document.getElementById('edit-bucket-remove').setAttribute('formaction', '/delete-bucket/' + id);
+  },
+
+  // After a remove the server redirects with ?removed=<id>. Show the Undo message once.
+  showUndoIfNeeded() {
+    const params = new URLSearchParams(window.location.search);
+    const itemId = params.get('removed');
+    if (!itemId) return;
+
+    params.delete('removed');
+    const query = params.toString();
+    history.replaceState(null, '', window.location.pathname + (query ? '?' + query : ''));
+
+    const toast = document.createElement('div');
+    toast.className = 'undo-toast';
+    toast.setAttribute('role', 'status');
+    toast.innerHTML = '<span>Removed from your bucket list.</span><button type="button">Undo</button>';
+    document.body.appendChild(toast);
+
+    const undoBtn = toast.querySelector('button');
+    undoBtn.addEventListener('click', async () => {
+      undoBtn.disabled = true;
+      try {
+        const res = await fetch('/api/bucket/' + encodeURIComponent(itemId) + '/restore', { method: 'POST' });
+        if (!res.ok) throw new Error('undo failed');
+        window.location.reload();
+      } catch (err) {
+        toast.querySelector('span').textContent = 'Couldn\u2019t bring it back \u2014 it may already be gone.';
+        undoBtn.remove();
+      }
+    });
+    setTimeout(() => toast.remove(), 8000);
   },
 
   initDoneToggle() {
