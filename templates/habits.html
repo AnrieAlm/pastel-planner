@@ -17,7 +17,7 @@
         <h3>{{ habit.name }}</h3>
         <span class="habit-streak" aria-live="polite">{{ habit.streakText }}</span>
       </div>
-      <span class="habit-status">{{ 'Active' if habit.active else 'Paused' }}</span>
+      <span class="habit-status">{{ 'Active' if hab<button type="button" class="habit-edit-btn"it.active else 'Paused' }}</span>
       <p class="habit-week-label">This week</p>
       <div class="habit-week" role="group" aria-label="This week for {{ habit.name }}">
         {% for day in habit.week %}
@@ -29,7 +29,12 @@
         {% endfor %}
       </div>
       <span class="habit-reminder">{% if habit.timeLabel %}{{ habit.timeLabel }} · {% endif %}{{ habit.daysLabel }}</span>
-      <button type="button" class="habit-edit-btn" data-edit-habit
+            <div class="habit-calendar-links">
+        <span>Add to calendar as a repeating event:</span>
+        <a href="/habits/{{ habit.habit_id }}/gcal" target="_blank" rel="noopener noreferrer">Google Calendar</a>
+        <a href="/habits/{{ habit.habit_id }}/ics">Download .ics</a>
+      </div>
+        <button type="button" class="habit-edit-btn" data-edit-habit
               data-habit-id="{{ habit.habit_id }}" data-name="{{ habit.name }}" data-time="{{ habit.time }}"
               data-days="{{ habit.daysValue }}" data-active="{{ 'true' if habit.active else 'false' }}"
               aria-label="Edit {{ habit.name }}">Edit</button>
