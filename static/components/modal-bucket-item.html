@@ -1,20 +1,24 @@
 <button class="modal-close" data-close-modal aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-width="1.5" stroke-linecap="square"/></svg></button>
 <h3>Add to bucket list</h3>
 
-<label for="bucket-title">Title</label>
-<input type="text" id="bucket-title" placeholder="e.g. Visit Kyoto" />
+<form method="post" action="/add-note" id="new-bucket-form">
+  <input type="hidden" name="next" value="/bucket" />
 
-<label for="bucket-category">Category</label>
-<select id="bucket-category">
-  <option value="movies">🎬 Movies</option>
-  <option value="places">📍 Places</option>
-  <option value="things">📦 Things</option>
-  <option value="experiences">✨ Experiences</option>
-</select>
+  <label for="bucket-title">Title</label>
+  <input type="text" id="bucket-title" name="title" maxlength="200" placeholder="e.g. Visit Kyoto" required />
 
-<label for="bucket-link">Link (optional)</label>
-<input type="url" id="bucket-link" placeholder="https://…" />
+  <label for="bucket-category">Category</label>
+  <select id="bucket-category" name="bucket">
+    <option value="movies">🎬 Movies</option>
+    <option value="places">📍 Places</option>
+    <option value="things">📦 Things</option>
+    <option value="experiences">✨ Experiences</option>
+  </select>
 
-<div class="modal-actions">
-  <button class="btn-modal-primary">Add item</button>
-</div>
+  <label for="bucket-link">Link (optional)</label>
+  <input type="url" id="bucket-link" name="link" maxlength="500" placeholder="https://…" />
+
+  <div class="modal-actions">
+    <button type="submit" class="btn-modal-primary">Add item</button>
+  </div>
+</form>
