@@ -1,27 +1,33 @@
+# Calyx Planner - main.py: all the routes (web addresses) of the app.
+# Pages are drawn by Jinja2 templates; every route checks the login first.
+
 import time
+from uuid import uuid4
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qsl, urlencode, urlsplit
-from uuid import uuid4
 
 from fastapi import FastAPI, Form, Request
+from pydantic import BaseModel
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
 
 from auth import checkRequest
 from calendar_helpers import (buildGoogleCalendarLink, buildHabitIcs, buildIcs, getCalendarView,
                               habitCalendarLink, safeFileName)
+from bucket_helpers import (addBucketItem, deleteBucketItem, getBucketItems, moveBucketNotesToWishList,
+                            planBucketItem, restoreBucketItem, toggleBucketDone, updateBucketItem)
 from db import createIndexes, notes, users
-from habits_helpers import (NAME_MAX, SLOT_LIMIT, cleanDays, getHabitState, getHabitsForToday,
-                            getHabitsView, setHabitLog)
-from notes_helpers import (FILTERS, CONTENT_MAX, TITLE_MAX, cleanBucket, cleanColor, cleanDate,
-                           cleanFinishBy, cleanLink, cleanText, cleanTime, getBucketNotes, getNotes,
-                           getToday, getTodayView, resolveWhen, toObjectId)
-
 from grocery_helpers import (addItems, clearChecked, getGroceryItems, removeItems, restoreBatch,
                              setChecked)
+from habits_helpers import (NAME_MAX, SLOT_LIMIT, cleanDays, getHabitState, getHabitsForToday,
+                            getHabitsView, setHabitLog)
+from notes_helpers import (FILTERS, CONTENT_MAX, TITLE_MAX, cleanColor, cleanDate, cleanFinishBy,
+                           cleanText, cleanTime, getNotes, getToday, getTodayView, resolveWhen,
+                           toObjectId)
+
+
 # Runs once when the server starts: makes sure the database indexes exist
 @asynccontextmanager
 async def lifespan(app):
@@ -30,6 +36,13 @@ async def lifespan(app):
     except Exception as error:
         # Do not crash the whole site if Atlas is slow to answer; just say so in the logs
         print("Could not create indexes yet:", error)
+    try:
+        # One-time tidy-up: wishes that were saved as notes move to the separate wish list
+        moved = moveBucketNotesToWishList()
+        if moved:
+            print(f"Moved {moved} old bucket-list note(s) to the wish list.")
+    except Exception as error:
+        print("Could not tidy old bucket-list notes yet:", error)
     yield
 
 
@@ -91,6 +104,7 @@ def loginPage(request: Request):
         return RedirectResponse("/", status_code=302)
     reason = "denied" if request.query_params.get("reason") == "denied" else ""
     return renderPage(request, "login.html", "login", {"reason": reason})
+
 
 # Today
 @app.get("/", response_class=HTMLResponse)
@@ -154,13 +168,13 @@ def groceryPage(request: Request):
                       {"user": user, "groceryItems": getGroceryItems(user["user_id"])})
 
 
-# Bucket list (the URL is /bucket, the sidebar key is "bucketlist"): notes that have a bucket category
+# Bucket list (the URL is /bucket): a wish list, completely separate from notes
 @app.get("/bucket", response_class=HTMLResponse)
 def bucketPage(request: Request):
     user, redirect = getUserOrRedirect(request)
     if redirect:
         return redirect
-    bucket = getBucketNotes(user["user_id"], user["timezone"])
+    bucket = getBucketItems(user["user_id"], user["timezone"])
     return renderPage(request, "bucket.html", "bucketlist", {"user": user, "bucket": bucket})
 
 
@@ -186,13 +200,12 @@ def apiMe(request: Request):
 # ---------- Note actions (forms). Each one checks the login first, only touches
 # ---------- notes with THIS user's user_id, then redirects back with status 302.
 
-# Add a note (from the "New note" sheet, the Today capture box or the bucket list sheet)
+# Add a note (from the "New note" sheet)
 @app.post("/add-note")
 def addNote(request: Request, title: str = Form(""), content: str = Form(""),
             color: str = Form("1"), urgent: str = Form(""), date: str = Form(""),
             time: str = Form(""), deadline: str = Form(""), finishBy: str = Form("", alias="finish_by"),
-            when: str = Form(""), bucket: str = Form(""), link: str = Form(""),
-            nextUrl: str = Form("/notes", alias="next")):
+            when: str = Form(""), nextUrl: str = Form("/notes", alias="next")):
     user, redirect = getUserOrRedirect(request)
     if redirect:
         return redirect
@@ -211,8 +224,6 @@ def addNote(request: Request, title: str = Form(""), content: str = Form(""),
             "created_at": datetime.now(timezone.utc),
             "date": noteDate,
             "time": cleanTime(time) if noteDate else None,
-            "bucket": cleanBucket(bucket),
-            "link": cleanLink(link),
             "deadline": noteDeadline,
             "finish_by": cleanFinishBy(finishBy, noteDeadline),
             "urgent": urgent == "on",
@@ -231,7 +242,6 @@ def addNote(request: Request, title: str = Form(""), content: str = Form(""),
 def updateNote(noteId: str, request: Request, title: str = Form(""), content: str = Form(""),
                color: str = Form("1"), urgent: str = Form(""), date: str = Form(""),
                time: str = Form(""), deadline: str = Form(""), finishBy: str = Form("", alias="finish_by"),
-               bucket: str = Form(""), hasBucket: str = Form("", alias="has_bucket"),
                nextUrl: str = Form("/notes", alias="next")):
     user, redirect = getUserOrRedirect(request)
     if redirect:
@@ -250,10 +260,6 @@ def updateNote(noteId: str, request: Request, title: str = Form(""), content: st
             "deadline": noteDeadline,
             "finish_by": cleanFinishBy(finishBy, noteDeadline),
         }
-        # The bucket choice is only changed if the sheet says it included one (has_bucket=1).
-        # An empty choice then means "not on the bucket list".
-        if hasBucket == "1":
-            changes["bucket"] = cleanBucket(bucket)
         # An empty title is ignored, so a note never ends up with no name
         cleanTitle = cleanText(title, TITLE_MAX)
         if cleanTitle:
@@ -263,44 +269,78 @@ def updateNote(noteId: str, request: Request, title: str = Form(""), content: st
     return RedirectResponse(safeNext(nextUrl), status_code=302)
 
 
-# Edit a bucket list item: its title, category and link (nothing else about the note changes)
-@app.post("/set-bucket/{noteId}")
-def setBucket(noteId: str, request: Request, title: str = Form(""), bucket: str = Form(""),
+# ---------- Bucket list (wish list). Its own collection: nothing here is a note, and nothing here
+# ---------- appears in Today, the Calendar or the Notes page. Every route only touches THIS user's items.
+
+# Add a wish (from the "Add to bucket list" sheet)
+@app.post("/add-bucket")
+def addBucket(request: Request, title: str = Form(""), category: str = Form(""), link: str = Form(""),
+              nextUrl: str = Form("/bucket", alias="next")):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    addBucketItem(user["user_id"], title, category, link)
+    return RedirectResponse(safeNext(nextUrl, "/bucket"), status_code=302)
+
+
+# Change a wish's title, category and link
+@app.post("/set-bucket/{itemId}")
+def setBucket(itemId: str, request: Request, title: str = Form(""), category: str = Form(""),
               link: str = Form(""), nextUrl: str = Form("/bucket", alias="next")):
     user, redirect = getUserOrRedirect(request)
     if redirect:
         return redirect
 
-    objectId = toObjectId(noteId)
-    if objectId is not None:
-        changes = {"link": cleanLink(link)}
-        if cleanBucket(bucket):
-            changes["bucket"] = cleanBucket(bucket)
-        cleanTitle = cleanText(title, TITLE_MAX)
-        if cleanTitle:
-            changes["title"] = cleanTitle
-        notes.update_one({"_id": objectId, "user_id": user["user_id"], "deleted_at": None},
-                         {"$set": changes})
+    updateBucketItem(user["user_id"], itemId, title, category, link)
     return RedirectResponse(safeNext(nextUrl, "/bucket"), status_code=302)
 
 
-# "Plan it": give a note a date (an empty date takes the plan away again)
-@app.post("/set-date/{noteId}")
-def setDate(noteId: str, request: Request, date: str = Form(""),
-            nextUrl: str = Form("/bucket", alias="next")):
+# "Plan it": a day you would like to do it (stays inside the bucket list; empty clears it)
+@app.post("/plan-bucket/{itemId}")
+def planBucket(itemId: str, request: Request, date: str = Form(""),
+               nextUrl: str = Form("/bucket", alias="next")):
     user, redirect = getUserOrRedirect(request)
     if redirect:
         return redirect
 
-    objectId = toObjectId(noteId)
-    if objectId is not None:
-        newDate = cleanDate(date)
-        changes = {"date": newDate}
-        if not newDate:
-            changes["time"] = None
-        notes.update_one({"_id": objectId, "user_id": user["user_id"], "deleted_at": None},
-                         {"$set": changes})
+    planBucketItem(user["user_id"], itemId, date)
     return RedirectResponse(safeNext(nextUrl, "/bucket"), status_code=302)
+
+
+# Mark a wish done (saving the date), or put it back on the list
+@app.post("/toggle-bucket/{itemId}")
+def toggleBucket(itemId: str, request: Request, nextUrl: str = Form("/bucket", alias="next")):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    toggleBucketDone(user["user_id"], itemId)
+    return RedirectResponse(safeNext(nextUrl, "/bucket"), status_code=302)
+
+
+# Remove a wish (it can be brought back with Undo)
+@app.post("/delete-bucket/{itemId}")
+def deleteBucket(itemId: str, request: Request, nextUrl: str = Form("/bucket", alias="next")):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    if deleteBucketItem(user["user_id"], itemId):
+        # ?removed=<id> makes the page show the "Undo" message
+        return RedirectResponse(withParam(safeNext(nextUrl, "/bucket"), "removed", itemId), status_code=302)
+    return RedirectResponse(safeNext(nextUrl, "/bucket"), status_code=302)
+
+
+# JSON route used by the bucket list's Undo button. Answers 401 if not logged in.
+@app.post("/api/bucket/{itemId}/restore")
+def apiBucketRestore(itemId: str, request: Request):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+    if not restoreBucketItem(user["user_id"], itemId):
+        return JSONResponse({"error": "not found"}, status_code=404)
+    return {"ok": True}
 
 
 # Delete = set deleted_at (not a real delete) so Undo can bring the note back
@@ -362,6 +402,7 @@ def rolloverNote(noteId: str, request: Request, action: str = Form(""),
                          {"$set": changes})
     return RedirectResponse(safeNext(nextUrl, "/"), status_code=302)
 
+
 # ---------- Add to calendar. Links and files are made from the SAVED note, in the person's timezone.
 
 # Sends the .ics file for one note (it has a reminder built in)
@@ -420,6 +461,7 @@ def habitGoogleCalendar(habitId: str, request: Request):
         return PlainTextResponse("Not found", status_code=404)
     return RedirectResponse(habitCalendarLink(habit, user["timezone"]), status_code=302)
 
+
 # JSON route used by the Undo button (fetch). Answers 401 if not logged in.
 @app.post("/api/undo-delete/{noteId}")
 def apiUndoDelete(noteId: str, request: Request):
@@ -435,6 +477,7 @@ def apiUndoDelete(noteId: str, request: Request):
     if not result.matched_count:
         return JSONResponse({"error": "not found"}, status_code=404)
     return {"ok": True}
+
 
 # ---------- Habits. They live inside the user document (max 3), so every change targets
 # ---------- the user document of the logged-in person only.
@@ -497,6 +540,7 @@ def apiHabitLog(habitId: str, body: HabitLogBody, request: Request):
     setHabitLog(user["user_id"], habitId, day, body.done)
     state = getHabitState(user, habitId)
     return {"ok": True, "date": day, "done": body.done, **state}
+
 
 # ---------- Grocery list. Forms for adding; small JSON routes for the instant actions
 # ---------- (tick, remove, clear, undo). Every one only touches THIS user's items.
@@ -579,6 +623,8 @@ def apiGroceryRestore(body: GroceryRestoreBody, request: Request):
     if not count:
         return JSONResponse({"error": "nothing to undo"}, status_code=404)
     return {"ok": True, "count": count}
+
+
 # Health check: handy for testing the server is up
 @app.get("/health")
 def health():
