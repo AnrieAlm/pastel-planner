@@ -169,9 +169,7 @@ const Notes = {
       }
     });
 
-    setTimeout(() => toast.remove(), 8000);
+       setTimeout(() => toast.remove(), 8000);
   }
-    
-  },
-
+};
   
