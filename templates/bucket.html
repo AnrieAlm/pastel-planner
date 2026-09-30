@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/_bucket_keepsake.html" import keepsake %}
 {% block title %}Bucket List{% endblock %}
 
 {# The page itself. The section id keeps the page CSS working. #}
@@ -12,225 +13,46 @@
       <button class="btn-add-bucket" data-modal="bucket-item">+ Add item</button>
     </div>
 
+    {# Tabs scroll to a category. The numbers count what is still to do. #}
     <div class="bucket-categories" role="tablist" aria-label="Bucket list categories">
-      <button type="button" class="bucket-cat cat-movies active" data-category="movies" role="tab" aria-selected="true">🎬 Movies <strong>2</strong></button>
-      <button type="button" class="bucket-cat cat-places" data-category="places" role="tab" aria-selected="false">📍 Places <strong>4</strong></button>
-      <button type="button" class="bucket-cat cat-things" data-category="things" role="tab" aria-selected="false">📦 Things <strong>2</strong></button>
-      <button type="button" class="bucket-cat cat-experiences" data-category="experiences" role="tab" aria-selected="false">✨ Experiences <strong>5</strong></button>
+      <button type="button" class="bucket-cat cat-movies active" data-category="movies" role="tab" aria-selected="true">🎬 Movies <strong>{{ bucket.sections.movies|length }}</strong></button>
+      <button type="button" class="bucket-cat cat-places" data-category="places" role="tab" aria-selected="false">📍 Places <strong>{{ bucket.sections.places|length }}</strong></button>
+      <button type="button" class="bucket-cat cat-things" data-category="things" role="tab" aria-selected="false">📦 Things <strong>{{ bucket.sections.things|length }}</strong></button>
+      <button type="button" class="bucket-cat cat-experiences" data-category="experiences" role="tab" aria-selected="false">✨ Experiences <strong>{{ bucket.sections.experiences|length }}</strong></button>
     </div>
 
-    <!-- Movies — torn ticket stub -->
-    <div class="bucket-section" id="section-movies">
-      <h3>🎬 Movies</h3>
+    {% for category, heading in [("movies", "🎬 Movies"), ("places", "📍 Places"), ("things", "📦 Things"), ("experiences", "✨ Experiences")] %}
+    <div class="bucket-section" id="section-{{ category }}">
+      <h3>{{ heading }}</h3>
       <div class="bucket-keepsake-scroll">
         <div class="bucket-keepsake-row">
-
-          <div class="bucket-keepsake">
-            <div class="bucket-ticket">
-              <div class="bucket-ticket-main">
-                <div class="bucket-keepsake-label">Movies</div>
-                <div class="bucket-title">Dune: Part Three</div>
-                <div class="bucket-detail">When it comes out</div>
-                <div class="bucket-barcode"></div>
-                <div class="bucket-barcode-num">0 4 2 &nbsp;1 1 &nbsp;A D M I T</div>
-              </div>
-              <div class="bucket-ticket-perf"></div>
-              <div class="bucket-ticket-stub">ADMIT ONE</div>
-            </div>
-          </div>
-
-          <div class="bucket-keepsake">
-            <div class="bucket-ticket">
-              <div class="bucket-ticket-main">
-                <div class="bucket-keepsake-label">Movies</div>
-                <div class="bucket-title">Past Lives</div>
-                <div class="bucket-detail">Celine Song, 2023</div>
-                <div class="bucket-barcode"></div>
-                <div class="bucket-barcode-num">0 4 2 &nbsp;1 1 &nbsp;A D M I T</div>
-              </div>
-              <div class="bucket-ticket-perf"></div>
-              <div class="bucket-ticket-stub">ADMIT ONE</div>
-            </div>
-          </div>
-
+          {% for note in bucket.sections[category] %}
+          {{ keepsake(note) }}
+          {% else %}
+          <p class="bucket-empty">Nothing here yet. Add something you’d love to do.</p>
+          {% endfor %}
         </div>
         <button type="button" class="bucket-slider-nav prev" aria-label="Scroll left">&#8249;</button>
         <button type="button" class="bucket-slider-nav next" aria-label="Scroll right">&#8250;</button>
       </div>
     </div>
+    {% endfor %}
 
-    <!-- Places — postcard with wax seal -->
-    <div class="bucket-section" id="section-places">
-      <h3>📍 Places</h3>
-      <div class="bucket-keepsake-scroll">
-        <div class="bucket-keepsake-row">
-
-          <div class="bucket-keepsake">
-            <div class="bucket-postcard">
-              <div class="bucket-postal-perf"></div>
-              <div class="bucket-postal-seal"><span class="bucket-postal-seal-mark">&#9992;</span></div>
-              <div class="bucket-keepsake-label">Places</div>
-              <div class="bucket-title">Azores, Portugal</div>
-              <div class="bucket-detail">Spring — hot springs and green hills</div>
-              <div class="bucket-postcard-divider"></div>
-            </div>
-          </div>
-
-          <div class="bucket-keepsake">
-            <div class="bucket-postcard">
-              <div class="bucket-postal-perf"></div>
-              <div class="bucket-postal-seal"><span class="bucket-postal-seal-mark">&#9992;</span></div>
-              <div class="bucket-keepsake-label">Places</div>
-              <div class="bucket-title">Lisbon</div>
-              <div class="bucket-detail">Finally, properly</div>
-              <div class="bucket-postcard-divider"></div>
-            </div>
-          </div>
-
-          <div class="bucket-keepsake">
-            <div class="bucket-postcard">
-              <div class="bucket-postal-perf"></div>
-              <div class="bucket-postal-seal"><span class="bucket-postal-seal-mark">&#9992;</span></div>
-              <div class="bucket-keepsake-label">Places</div>
-              <div class="bucket-title">Goa family trip</div>
-              <div class="bucket-detail">With Boris, December</div>
-              <div class="bucket-postcard-divider"></div>
-            </div>
-          </div>
-
-          <div class="bucket-keepsake">
-            <div class="bucket-postcard">
-              <div class="bucket-postal-perf"></div>
-              <div class="bucket-postal-seal"><span class="bucket-postal-seal-mark">&#9992;</span></div>
-              <div class="bucket-keepsake-label">Places</div>
-              <div class="bucket-title">Scottish Highlands</div>
-              <div class="bucket-detail">Cottage for a weekend</div>
-              <div class="bucket-postcard-divider"></div>
-            </div>
-          </div>
-
-        </div>
-        <button type="button" class="bucket-slider-nav prev" aria-label="Scroll left">&#8249;</button>
-        <button type="button" class="bucket-slider-nav next" aria-label="Scroll right">&#8250;</button>
-      </div>
-    </div>
-
-    <!-- Things — luggage tag -->
-    <div class="bucket-section" id="section-things">
-      <h3>📦 Things</h3>
-      <div class="bucket-keepsake-scroll">
-        <div class="bucket-keepsake-row">
-
-          <div class="bucket-keepsake">
-            <div class="bucket-tag-wrap">
-              <div class="bucket-tag-string"></div>
-              <div class="bucket-tag">
-                <div class="bucket-tag-hole"></div>
-                <div class="bucket-keepsake-label">Things</div>
-                <div class="bucket-title">Grow herbs on windowsill</div>
-                <div class="bucket-detail">Lavender, mint, thyme</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="bucket-keepsake">
-            <div class="bucket-tag-wrap">
-              <div class="bucket-tag-string"></div>
-              <div class="bucket-tag">
-                <div class="bucket-tag-hole"></div>
-                <div class="bucket-keepsake-label">Things</div>
-                <div class="bucket-title">Learn sourdough</div>
-                <div class="bucket-detail">Proper starter from scratch</div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-        <button type="button" class="bucket-slider-nav prev" aria-label="Scroll left">&#8249;</button>
-        <button type="button" class="bucket-slider-nav next" aria-label="Scroll right">&#8250;</button>
-      </div>
-    </div>
-
-    <!-- Experiences — polaroid -->
-    <div class="bucket-section" id="section-experiences">
-      <h3>✨ Experiences</h3>
-      <div class="bucket-keepsake-scroll">
-        <div class="bucket-keepsake-row">
-
-          <div class="bucket-keepsake">
-            <div class="bucket-polaroid">
-              <div class="bucket-tape"></div>
-              <div class="bucket-polaroid-photo">&#10022;</div>
-              <div class="bucket-polaroid-caption">See Northern Lights</div>
-            </div>
-          </div>
-
-          <div class="bucket-keepsake">
-            <div class="bucket-polaroid">
-              <div class="bucket-tape"></div>
-              <div class="bucket-polaroid-photo">&#10022;</div>
-              <div class="bucket-polaroid-caption">Pottery class</div>
-            </div>
-          </div>
-
-          <div class="bucket-keepsake">
-            <div class="bucket-polaroid">
-              <div class="bucket-tape"></div>
-              <div class="bucket-polaroid-photo">&#10022;</div>
-              <div class="bucket-polaroid-caption">Cook a Sunday roast</div>
-            </div>
-          </div>
-
-          <div class="bucket-keepsake">
-            <div class="bucket-polaroid">
-              <div class="bucket-tape"></div>
-              <div class="bucket-polaroid-photo">&#10022;</div>
-              <div class="bucket-polaroid-caption">Watch a sunrise</div>
-            </div>
-          </div>
-
-          <div class="bucket-keepsake">
-            <div class="bucket-polaroid">
-              <div class="bucket-tape"></div>
-              <div class="bucket-polaroid-photo">&#10022;</div>
-              <div class="bucket-polaroid-caption">Write a short story</div>
-            </div>
-          </div>
-
-        </div>
-        <button type="button" class="bucket-slider-nav prev" aria-label="Scroll left">&#8249;</button>
-        <button type="button" class="bucket-slider-nav next" aria-label="Scroll right">&#8250;</button>
-      </div>
-    </div>
-
-    <!-- Done shelf — collapsed by default, js/bucketlist.js's initDoneToggle() handles this.
-         Items keep their own category's shape, stamped, mixed together since
-         "done" cuts across categories. -->
+    {# Done shelf: collapsed by default (js/bucketlist.js). Each keeps its own shape, with the date it was finished. #}
+    {% if bucket.done %}
     <button type="button" class="bucket-done-toggle">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16" aria-hidden="true">
         <path d="M9 6l6 6-6 6" stroke-width="2" stroke-linecap="square" stroke-linejoin="round"/>
       </svg>
-      Done <span aria-hidden="true">·</span> <span class="bucket-done-count">1</span>
+      Done <span aria-hidden="true">·</span> <span class="bucket-done-count">{{ bucket.done|length }}</span>
     </button>
     <div class="bucket-section">
       <div class="bucket-keepsake-row" style="overflow-x: visible; flex-wrap: wrap; margin: 0; padding: 14px 0 0;">
-
-        <div class="bucket-keepsake no-animate done">
-          <div class="bucket-ticket">
-            <div class="bucket-done-stamp">Done<span class="bucket-done-stamp-date">14 Sep 2026</span></div>
-            <div class="bucket-ticket-main">
-              <div class="bucket-keepsake-label">Movies · Done</div>
-              <div class="bucket-title">Poor Things</div>
-              <div class="bucket-detail">Watched — loved it</div>
-              <div class="bucket-barcode"></div>
-              <div class="bucket-barcode-num">0 4 2 &nbsp;1 1 &nbsp;A D M I T</div>
-            </div>
-            <div class="bucket-ticket-perf"></div>
-            <div class="bucket-ticket-stub">ADMIT ONE</div>
-          </div>
-        </div>
-
+        {% for note in bucket.done %}
+        {{ keepsake(note, done=true) }}
+        {% endfor %}
       </div>
     </div>
+    {% endif %}
 </section>
 {% endblock %}
