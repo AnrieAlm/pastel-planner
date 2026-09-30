@@ -119,3 +119,67 @@
   text-align: center;
   margin-top: var(--sp-md);
 }
+
+/* ===== Real habits (Stage 4) ===== */
+
+/* The week circles are buttons now. The circle stays 34px; the invisible ::after gives a 44px tap area. */
+.habit-day {
+  position: relative;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+.habit-day::after {
+  content: '';
+  position: absolute;
+  inset: -5px -2px;
+}
+.habit-day:disabled { cursor: default; }
+.habit-day:not(:disabled):not(.done):hover { background: var(--calendar-mark-tint); color: var(--text-primary); }
+.habit-day:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.habit-day.today { box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px var(--accent-primary); }
+/* Days this habit is not planned for look quieter, with a dashed edge (not colour alone) */
+.habit-day.off:not(.done) {
+  background: transparent;
+  border: 1.5px dashed var(--border-strong);
+  opacity: 0.7;
+}
+.habit-day:disabled:not(.done) { opacity: 0.55; }
+
+.habit-card-paused { opacity: 0.75; }
+
+/* "Edit" gets a proper 44px tap area */
+.habit-edit-btn { position: relative; }
+.habit-edit-btn::after {
+  content: '';
+  position: absolute;
+  inset: -6px -4px;
+}
+.habit-edit-btn:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
+/* An empty slot is an invitation, not a card with nothing in it */
+button.habit-card-empty {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-sm);
+  width: 100%;
+  min-height: 72px;
+  text-align: left;
+  font-family: inherit;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1.5px dashed var(--border-strong);
+  box-shadow: none;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+button.habit-card-empty:hover { background: var(--bg-card); border-color: var(--accent-primary); }
+button.habit-card-empty:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.habit-empty-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-base);
+  color: var(--text-primary);
+}
