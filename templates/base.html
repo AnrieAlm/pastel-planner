@@ -36,7 +36,7 @@
     } catch (e) {}
   </script>
 </head>
-<body data-section="{{ section | default('today') }}">
+<body data-section="{{ section | default('today') }}" data-asset-version="{{ assetVersion }}">
 
   {# Pages normally use this shell. The login page replaces the whole body block. #}
   {% block body %}
