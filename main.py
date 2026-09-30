@@ -62,6 +62,44 @@ templates = Jinja2Templates(directory="templates")
 # browsers always fetch the new files instead of showing an old cached copy.
 templates.env.globals["assetVersion"] = str(int(time.time()))
 
+# ---------- App install files (PWA). These are public on purpose: the browser needs them before anyone logs in.
+# They are served from the site root (not /static/) so they control the whole app.
+
+# The app's "ID card": name, colours and icons, so it can be added to the home screen
+@app.get("/manifest.json")
+def manifest():
+    return Response(Path("manifest.json").read_text(), media_type="application/manifest+json",
+                    headers={"Cache-Control": "no-cache"})
+
+
+# The service worker. __VERSION__ becomes the deploy's version number, so each deploy refreshes the kept files.
+@app.get("/sw.js")
+def serviceWorker():
+    source = Path("sw.js").read_text().replace("__VERSION__", templates.env.globals["assetVersion"])
+    return Response(source, media_type="application/javascript",
+                    headers={"Cache-Control": "no-cache", "Service-Worker-Allowed": "/"})
+
+
+# The "Waking things up..." page (also used when you are offline)
+@app.get("/waking", response_class=HTMLResponse)
+def wakingPage(request: Request):
+    return templates.TemplateResponse(request, "waking.html", {})
+
+
+# The app icons, drawn by icons.py
+@app.get("/icons/{name}")
+def appIcon(name: str):
+    png = makeIcon(name) if name in ICONS else None
+    if png is None:
+        return PlainTextResponse("Not found", status_code=404)
+    return Response(png, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+
+# Browsers ask for /favicon.ico on their own
+@app.get("/favicon.ico")
+def favicon():
+    return Response(makeIcon("favicon-32.png"), media_type="image/png",
+                    headers={"Cache-Control": "public, max-age=86400"})
 
 # Small helper: render one template. "section" tells base.html which
 # sidebar/bottom-nav link to highlight.
