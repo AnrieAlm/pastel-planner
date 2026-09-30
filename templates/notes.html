@@ -14,7 +14,7 @@
 
     {# One chip per filter. The server highlights the active one. #}
     <div class="notes-filters" role="group" aria-label="Filter notes">
-      {% for key, label in [("all", "All"), ("undated", "Undated"), ("dated", "Dated"), ("bucket", "Bucket"), ("urgent", "Urgent"), ("done", "Done")] %}
+     {% for key, label in [("all", "All"), ("undated", "Undated"), ("dated", "Dated"), ("urgent", "Urgent"), ("done", "Done")] %}
       <button type="button" data-filter="{{ key }}"
               class="{% if activeFilter == key %}active{% endif %}"
               aria-pressed="{{ 'true' if activeFilter == key else 'false' }}">{{ label }}</button>
@@ -36,8 +36,7 @@
               data-date="{{ note.date or '' }}"
               data-time="{{ note.time or '' }}"
               data-deadline="{{ note.deadline or '' }}"
-              data-finish-by="{{ note.finish_by or '' }}"
-              data-bucket="{{ note.bucket or '' }}">
+              data-finish-by="{{ note.finish_by or '' }}">
           
         <h4>{% if note.done %}✓ {% elif note.urgent %}⚑ {% endif %}{{ note.title }}</h4>
         {% if note.content %}<p>{{ note.content }}</p>{% endif %}
