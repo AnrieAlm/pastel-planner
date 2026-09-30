@@ -11,6 +11,7 @@ from fastapi import FastAPI, Form, Request
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from fastapi.templating import Jinja2Templates
 
 from auth import checkRequest
@@ -19,6 +20,7 @@ from calendar_helpers import (buildGoogleCalendarLink, buildHabitIcs, buildIcs, 
 from bucket_helpers import (addBucketItem, deleteBucketItem, getBucketItems, moveBucketNotesToWishList,
                             planBucketItem, restoreBucketItem, toggleBucketDone, updateBucketItem)
 from db import createIndexes, notes, users
+from icons import ICONS, makeIcon
 from grocery_helpers import (addItems, clearChecked, getGroceryItems, removeItems, restoreBatch,
                              setChecked)
 from habits_helpers import (NAME_MAX, SLOT_LIMIT, cleanDays, getHabitState, getHabitsForToday,
