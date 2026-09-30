@@ -15,10 +15,6 @@
     <option value="experiences">✨ Experiences</option>
   </select>
 
-  <label for="edit-bucket-link">Link (optional)</label>
-  <input type="url" id="edit-bucket-link" name="link" maxlength="500" placeholder="https://…" />
-  <a id="edit-bucket-open-link" class="bucket-open-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Open link ↗</a>
-
   <div class="modal-actions">
     <button type="submit" class="btn-modal-primary" id="edit-bucket-save">Save</button>
   </div>
@@ -32,5 +28,12 @@
   <div class="modal-actions">
     <button type="submit" class="btn-modal-secondary" id="edit-bucket-done" formnovalidate>Mark done</button>
     <button type="submit" class="btn-modal-danger" id="edit-bucket-remove" formnovalidate>Remove</button>
+  </div>
+
+  <label for="edit-bucket-link">Link (optional)</label>
+  <input type="url" id="edit-bucket-link" name="link" maxlength="500" placeholder="https://…" />
+  <a id="edit-bucket-open-link" class="bucket-open-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Open link ↗</a>
+  <div class="modal-actions">
+    <button type="submit" class="btn-modal-secondary" id="edit-bucket-save-link">Save link</button>
   </div>
 </form>
