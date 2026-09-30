@@ -4,6 +4,14 @@
 <form method="post" id="edit-note-form" action="/update-note/">
   <input type="hidden" name="next" value="/notes" />
   <input type="hidden" name="color" value="1" />
+    <label for="note-bucket">Bucket list</label>
+  <select id="note-bucket" name="bucket">
+    <option value="">Not on the bucket list</option>
+    <option value="movies">🎬 Movies</option>
+    <option value="places">📍 Places</option>
+    <option value="things">📦 Things</option>
+    <option value="experiences">✨ Experiences</option>
+  </select>
 
   <label for="note-title">Title</label>
   <input type="text" id="note-title" name="title" maxlength="200" required />
