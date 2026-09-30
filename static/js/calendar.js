@@ -1,63 +1,76 @@
 /**
  * Calyx Planner — Calendar Page
+ * The server draws the month and a panel for every day. This file makes tapping a day
+ * instant (no reload) and fills in the date when you add something on a day.
  */
 const Calendar = {
-  selectedDay: null,
-
   init() {
-    document.querySelectorAll('.calendar-day:not(:empty)').forEach(day => {
-      // Keyboard-operable, same reasoning as note cards
-      day.setAttribute('tabindex', '0');
-      day.setAttribute('role', 'button');
-      day.setAttribute('aria-pressed', 'false');
+    const grid = document.querySelector('.calendar-grid');
+    if (!grid) return;
 
-      day.addEventListener('click', () => this.selectDay(day));
-      day.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          this.selectDay(day);
-        }
-      });
-    });
+    this.initDaySelection(grid);
+    this.initAddButtons();
 
-    this.initMonthNav();
+    // Arriving with ?day=... on a phone: make sure the day's list is in view
+    if (new URLSearchParams(window.location.search).has('day')) {
+      this.scrollPanelIntoView();
+    }
   },
 
-  // Only one month of mock data exists (September 2026), so actually
-  // changing the grid to a different month would either show nothing
-  // or, worse, show September's days mislabelled as October — actively
-  // wrong rather than just incomplete. Until real month data exists,
-  // this gives honest, visible feedback instead of silently doing
-  // nothing (a dead button) or fabricating wrong dates.
-  initMonthNav() {
-    const note = document.querySelector('.calendar-nav-note');
-    let hideTimer = null;
-
-    document.querySelectorAll('.calendar-nav button').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (!note) return;
-        note.classList.remove('hidden');
-        clearTimeout(hideTimer);
-        hideTimer = setTimeout(() => note.classList.add('hidden'), 3000);
-      });
+  // Tapping a day shows its panel. The day is a real link too, so it still works without JavaScript.
+  initDaySelection(grid) {
+    grid.addEventListener('click', (e) => {
+      const day = e.target.closest('a.calendar-day[data-date]');
+      if (!day) return;
+      e.preventDefault();
+      this.selectDay(day);
     });
   },
 
-  // Selecting a day updates which day is highlighted and refreshes the
-  // detail panel. aria-current="date" is reserved for the real current
-  // date — it's set once, statically, on .today in pages/calendar.html,
-  // and this function never touches it. aria-pressed marks selection
-  // instead, so today and "the day you clicked" can't collide.
   selectDay(day) {
+    const iso = day.dataset.date;
+
+    // Move the highlight (aria-current="date" stays on today only)
     document.querySelectorAll('.calendar-day.selected').forEach(d => {
       d.classList.remove('selected');
-      d.setAttribute('aria-pressed', 'false');
+      d.setAttribute('aria-label', d.dataset.label);
     });
     day.classList.add('selected');
-    day.setAttribute('aria-pressed', 'true');
-    this.selectedDay = day.textContent.trim();
+    day.setAttribute('aria-label', day.dataset.label + ', selected');
 
-    // TODO: once notes/events come from real data, look up this day's
-    // events/habits here and rebuild .calendar-day-detail's contents
+    // Show only this day's panel
+    document.querySelectorAll('.day-panel').forEach(panel => {
+      panel.hidden = panel.dataset.panel !== iso;
+    });
+    document.getElementById('calendar-pick-day')?.remove();
+
+    // "+ Add event" in the header adds on the selected day
+    const headerAdd = document.getElementById('calendar-add-event');
+    if (headerAdd) headerAdd.dataset.addOn = iso;
+
+    // Keep the address in step, so a refresh (or coming back after editing a note) stays on this day
+    const params = new URLSearchParams(window.location.search);
+    params.set('day', iso);
+    history.replaceState(null, '', window.location.pathname + '?' + params.toString());
+
+    this.scrollPanelIntoView();
+  },
+
+  // On narrow screens the list sits below the grid, so bring it into view
+  scrollPanelIntoView() {
+    if (!window.matchMedia('(max-width: 999px)').matches) return;
+    document.getElementById('day-detail')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  },
+
+  // "+ Add event" and "+ Add on this day" open the New note sheet with the day already filled in
+  initAddButtons() {
+    document.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-add-on]');
+      if (!btn) return;
+      await Modals.open('new-note');
+      const date = btn.dataset.addOn;
+      const dateInput = document.getElementById('new-note-date');
+      if (date && dateInput) dateInput.value = date;
+    });
   }
 };
