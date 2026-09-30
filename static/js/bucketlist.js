@@ -70,6 +70,8 @@ const Bucketlist = {
       openLink.hidden = true;
     }
 
+    // "Save link" saves the same things as Save (title, category, link), so it uses the default address
+    document.getElementById('edit-bucket-save-link').setAttribute('formaction', '/set-bucket/' + id);
     // Each extra button posts to its own address
     document.getElementById('edit-bucket-plan').setAttribute('formaction', '/set-date/' + id);
     const doneBtn = document.getElementById('edit-bucket-done');
