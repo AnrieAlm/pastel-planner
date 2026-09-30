@@ -136,3 +136,40 @@
 .grocery-actions button:hover {
   background: var(--bg-card);
 }
+
+/* ===== Real grocery list (Stage 6) ===== */
+
+/* Each row: the tick and name on the left, a quiet remove button on the right */
+.grocery-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+.grocery-row .grocery-item { flex: 1; min-width: 0; }
+.grocery-item-name { overflow-wrap: anywhere; }
+
+.grocery-remove {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.grocery-remove svg { width: 16px; height: 16px; }
+.grocery-remove:hover { background: var(--bg-raised); color: var(--text-primary); }
+.grocery-remove:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
+.grocery-empty {
+  font-family: var(--font-hand);
+  font-size: var(--fs-md);
+  color: var(--text-secondary);
+  padding: var(--sp-sm) 0;
+}
+
+/* The two buttons under the list get a 44px tap height */
+.grocery-actions button { min-height: 44px; }
+.grocery-actions button:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
