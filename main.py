@@ -20,7 +20,8 @@ from notes_helpers import (FILTERS, CONTENT_MAX, TITLE_MAX, cleanBucket, cleanCo
                            cleanFinishBy, cleanLink, cleanText, cleanTime, getBucketNotes, getNotes,
                            getToday, getTodayView, resolveWhen, toObjectId)
 
-
+from grocery_helpers import (addItems, clearChecked, getGroceryItems, removeItems, restoreBatch,
+                             setChecked)
 # Runs once when the server starts: makes sure the database indexes exist
 @asynccontextmanager
 async def lifespan(app):
@@ -143,13 +144,14 @@ def habitsPage(request: Request):
     return renderPage(request, "habits.html", "habits", {"user": user, "hv": getHabitsView(user)})
 
 
-# Grocery list
+# Grocery list: this person's own shopping list
 @app.get("/grocery", response_class=HTMLResponse)
 def groceryPage(request: Request):
     user, redirect = getUserOrRedirect(request)
     if redirect:
         return redirect
-    return renderPage(request, "grocery.html", "grocery", {"user": user})
+    return renderPage(request, "grocery.html", "grocery",
+                      {"user": user, "groceryItems": getGroceryItems(user["user_id"])})
 
 
 # Bucket list (the URL is /bucket, the sidebar key is "bucketlist"): notes that have a bucket category
@@ -495,6 +497,88 @@ def apiHabitLog(habitId: str, body: HabitLogBody, request: Request):
     setHabitLog(user["user_id"], habitId, day, body.done)
     state = getHabitState(user, habitId)
     return {"ok": True, "date": day, "done": body.done, **state}
+
+# ---------- Grocery list. Forms for adding; small JSON routes for the instant actions
+# ---------- (tick, remove, clear, undo). Every one only touches THIS user's items.
+
+# Add one or more items (from the "Add to grocery list" sheet). "milk, eggs" adds two.
+@app.post("/add-grocery")
+def addGrocery(request: Request, name: str = Form(""), nextUrl: str = Form("/grocery", alias="next")):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    addItems(user["user_id"], name)
+    return RedirectResponse(safeNext(nextUrl, "/grocery"), status_code=302)
+
+
+# What the JSON routes below receive
+class GroceryAddBody(BaseModel):
+    name: str = ""
+
+
+class GroceryCheckBody(BaseModel):
+    checked: bool = True
+
+
+class GroceryRemoveBody(BaseModel):
+    ids: list[str] = []
+
+
+class GroceryRestoreBody(BaseModel):
+    batch: str = ""
+
+
+# JSON: add items (used by Sinéad's "Add chicken to your list?" suggestion on Today)
+@app.post("/api/grocery/add")
+def apiGroceryAdd(body: GroceryAddBody, request: Request):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+    return {"ok": True, "added": addItems(user["user_id"], body.name)}
+
+
+# JSON: tick or un-tick one item
+@app.post("/api/grocery/{itemId}/check")
+def apiGroceryCheck(itemId: str, body: GroceryCheckBody, request: Request):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+    if not setChecked(user["user_id"], itemId, body.checked):
+        return JSONResponse({"error": "not found"}, status_code=404)
+    return {"ok": True, "checked": body.checked}
+
+
+# JSON: remove some items (they can be brought back with Undo)
+@app.post("/api/grocery/remove")
+def apiGroceryRemove(body: GroceryRemoveBody, request: Request):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+    batch, count = removeItems(user["user_id"], body.ids)
+    return {"ok": True, "batch": batch, "count": count}
+
+
+# JSON: remove all the ticked items ("Clear done items")
+@app.post("/api/grocery/clear")
+def apiGroceryClear(request: Request):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+    batch, count = clearChecked(user["user_id"])
+    return {"ok": True, "batch": batch, "count": count}
+
+
+# JSON: Undo for remove / clear
+@app.post("/api/grocery/restore")
+def apiGroceryRestore(body: GroceryRestoreBody, request: Request):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+    count = restoreBatch(user["user_id"], body.batch)
+    if not count:
+        return JSONResponse({"error": "nothing to undo"}, status_code=404)
+    return {"ok": True, "count": count}
 # Health check: handy for testing the server is up
 @app.get("/health")
 def health():
