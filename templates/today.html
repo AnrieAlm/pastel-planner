@@ -157,12 +157,26 @@
       {% endfor %}
     </div>
 
-    <!-- Habits mini -->
+    {# Habits planned for today: tap to tick. The words under each name are a gentle streak. #}
+    {% if habits %}
     <div class="today-habits">
-      <span class="habit-chip">🧘 Morning yoga — 7 day streak ✓</span>
-      <span class="habit-chip">📖 Read — 3 days</span>
-      <span class="habit-chip">📓 Journal ✓ Done today</span>
+      {% for habit in habits %}
+      <button type="button" class="habit-chip{% if habit.doneToday %} done{% endif %}"
+              data-habit-id="{{ habit.habit_id }}" data-date="{{ habit.todayIso }}"
+              aria-pressed="{{ 'true' if habit.doneToday else 'false' }}">
+        <span class="habit-chip-tick" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 12.5l4 4 8-9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="habit-chip-text">
+          <span class="habit-chip-name">{{ habit.name }}</span>
+          <span class="habit-chip-streak">{{ habit.streakText }}</span>
+        </span>
+      </button>
+      {% endfor %}
     </div>
+    {% elif not user.habits %}
+    <p class="today-empty"><a href="/habits">Set up your three gentle habits</a> and they'll show up here to tick.</p>
+    {% endif %}
 
     {# Coming up: the next 7 days #}
     <div class="coming-up">
