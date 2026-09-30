@@ -20,8 +20,69 @@ const Today = {
     this.initDatePicked();
     this.initCapture();
     this.showAddedToastIfNeeded();
+    this.initRoutineTimeline();
   },
 
+
+    // Morning routine: moves the "Now" highlight and its countdown with the real clock, instead of
+  // the fixed "Now / 8 min left" the sample data used to show. (The blocks themselves are still
+  // sample data — a real, editable routine arrives in a later stage.)
+  initRoutineTimeline() {
+    const container = document.getElementById('morning-routine');
+    const blocks = [...(container?.querySelectorAll('.timeline-block[data-time]') || [])];
+    if (!blocks.length) return;
+
+    const toMinutes = (hhmm) => {
+      const [h, m] = hhmm.split(':').map(Number);
+      return h * 60 + m;
+    };
+    const schedule = blocks.map(el => ({
+      el,
+      start: toMinutes(el.dataset.time),
+      isFinal: el.dataset.final === 'true',
+      originalTime: el.querySelector('.timeline-time').textContent,
+    }));
+
+    const update = () => {
+      const now = new Date();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+      schedule.forEach((block, i) => {
+        const next = schedule[i + 1];
+        // A point-in-time block (the last one, "depart") stays "active" for 10 minutes rather
+        // than having a real duration
+        const end = next ? next.start : block.start + 10;
+        const isActive = nowMinutes >= block.start && nowMinutes < end;
+        const isDone = nowMinutes >= end;
+
+        block.el.classList.toggle('active', isActive);
+        block.el.classList.toggle('done', isDone && !isActive);
+
+        const timeEl = block.el.querySelector('.timeline-time');
+        if (isActive) {
+          const minutesLeft = end - nowMinutes;
+          timeEl.textContent = 'Now';
+          block.el.querySelector('.timeline-countdown')?.remove();
+          if (!block.isFinal && minutesLeft > 0) {
+            const countdown = document.createElement('span');
+            countdown.className = 'timeline-countdown';
+            countdown.textContent = `· ${minutesLeft} min left`;
+            block.el.querySelector('.timeline-label').after(countdown);
+          }
+        } else {
+          timeEl.textContent = block.originalTime;
+          block.el.querySelector('.timeline-countdown')?.remove();
+        }
+      });
+    };
+
+    update();
+    // A short interval keeps the countdown feeling "live" without doing real work most ticks
+    const timer = setInterval(update, 30000);
+    // Phones pause timers while a tab is hidden; catch up the moment it's visible again
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) update(); });
+    window.addEventListener('pagehide', () => clearInterval(timer));
+  },
   // After the capture form sends, the server redirects to /?added=1. Say so once.
   showAddedToastIfNeeded() {
     const params = new URLSearchParams(window.location.search);
