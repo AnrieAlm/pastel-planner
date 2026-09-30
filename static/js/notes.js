@@ -63,6 +63,14 @@ const Notes = {
     doneBtn.setAttribute('formaction', '/toggle-done/' + note.noteId);
     doneBtn.textContent = note.done === 'true' ? 'Mark not done' : 'Mark done';
     document.getElementById('note-delete-btn').setAttribute('formaction', '/delete-note/' + note.noteId);
+    
+    // Calendar links are made by the server from the saved note. They only make sense once
+    // the note has a date or a deadline.
+    const hasWhen = Boolean(note.date || note.deadline);
+    document.getElementById('note-calendar-actions').classList.toggle('hidden', !hasWhen);
+    document.getElementById('note-calendar-hint').classList.toggle('hidden', hasWhen);
+    document.getElementById('note-gcal').setAttribute('href', '/notes/' + note.noteId + '/gcal');
+    document.getElementById('note-ics').setAttribute('href', '/notes/' + note.noteId + '/ics');
   },
 
   // The "When do you want to have it done?" block only shows once a deadline is set
@@ -164,92 +172,4 @@ const Notes = {
     setTimeout(() => toast.remove(), 8000);
   },
 
-  // The two calendar buttons inside the edit sheet
-  initCalendarButtons() {
-    document.addEventListener('click', (e) => {
-      const btn = e.target.closest('#edit-note-form [data-note-action]');
-      if (!btn) return;
-      if (btn.dataset.noteAction === 'gcal') this.openGoogleCalendarLink();
-      if (btn.dataset.noteAction === 'ics') this.downloadIcs();
-    });
-  },
-
-  // Reads the date/time boxes in the edit sheet. With a time it is a 30-minute event,
-  // with only a date it is an all-day event.
-  getEventTimes() {
-    const date = document.getElementById('note-date')?.value;
-    const time = document.getElementById('note-time')?.value;
-    if (!date) return null;
-
-    if (!time) {
-      const [y, m, d] = date.split('-').map(Number);
-      const next = new Date(y, m - 1, d + 1);
-      const pad = (n) => String(n).padStart(2, '0');
-      return {
-        allDay: true,
-        start: date.replaceAll('-', ''),
-        end: `${next.getFullYear()}${pad(next.getMonth() + 1)}${pad(next.getDate())}`
-      };
-    }
-
-    const start = new Date(`${date}T${time}`);
-    const end = new Date(start.getTime() + 30 * 60000);
-    const fmt = (dt) => dt.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    return { allDay: false, start: fmt(start), end: fmt(end) };
-  },
-
-  // Google Calendar "quick add" link, opened in a new tab
-  openGoogleCalendarLink() {
-    const title = document.getElementById('note-title')?.value?.trim() || 'Note';
-    const details = document.getElementById('note-content')?.value?.trim() || '';
-    const times = this.getEventTimes();
-    const datesParam = times ? `&dates=${times.start}/${times.end}` : '';
-
-    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}${datesParam}&details=${encodeURIComponent(details)}`;
-    window.open(url, '_blank');
-  },
-
-  // A plain-text .ics calendar file with a 15-minute reminder, downloaded straight away
-  downloadIcs() {
-    const title = document.getElementById('note-title')?.value?.trim() || 'Note';
-    const details = document.getElementById('note-content')?.value?.trim() || '';
-    const times = this.getEventTimes();
-    const escapeText = (text) => text.replace(/([,;\\])/g, '\\$1').replace(/\n/g, '\\n');
-    const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-
-    const startLine = !times ? `DTSTART;VALUE=DATE:${stamp.slice(0, 8)}`
-      : times.allDay ? `DTSTART;VALUE=DATE:${times.start}` : `DTSTART:${times.start}`;
-    const endLine = !times ? null
-      : times.allDay ? `DTEND;VALUE=DATE:${times.end}` : `DTEND:${times.end}`;
-
-    const ics = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//Calyx Planner//EN',
-      'BEGIN:VEVENT',
-      `UID:${Date.now()}@calyxplanner`,
-      `DTSTAMP:${stamp}`,
-      startLine,
-      ...(endLine ? [endLine] : []),
-      `SUMMARY:${escapeText(title)}`,
-      `DESCRIPTION:${escapeText(details)}`,
-      'BEGIN:VALARM',
-      'ACTION:DISPLAY',
-      'TRIGGER:-PT15M',
-      'DESCRIPTION:Reminder',
-      'END:VALARM',
-      'END:VEVENT',
-      'END:VCALENDAR'
-    ].join('\r\n');
-
-    const blob = new Blob([ics], { type: 'text/calendar' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${title.replace(/[^\w\-]+/g, '_') || 'note'}.ics`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }
-};
+  
