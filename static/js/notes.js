@@ -52,8 +52,7 @@ const Notes = {
     document.getElementById('note-finish-by').value = note.finishBy || '';
     this.syncFinishBy(form);
     
-    const bucketSelect = document.getElementById('note-bucket');
-    if (bucketSelect) bucketSelect.value = note.bucket || '';
+    
 
     const dot = form.querySelector('.colour-dot.colour-' + note.color);
     if (dot) Modals.selectColourDot(dot);
