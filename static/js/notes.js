@@ -11,7 +11,7 @@ const Notes = {
     this.initForms();
     this.initFinishBy();
     this.showUndoIfNeeded();
-    this.initCalendarButtons();
+   
   },
 
   // Filter chips reload the page with ?filter=... (the server does the filtering)
@@ -170,6 +170,8 @@ const Notes = {
     });
 
     setTimeout(() => toast.remove(), 8000);
+  }
+    
   },
 
   
