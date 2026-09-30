@@ -34,7 +34,7 @@
 
     <div class="calendar-layout">
       {# Weeks start on Monday. Each day is a link (so it works without JavaScript); JavaScript makes it instant. #}
-      <div class="calendar-grid">
+            <div class="calendar-grid" id="calendar-grid" data-prev-month="{{ cal.prevMonth }}" data-next-month="{{ cal.nextMonth }}">
         <span class="calendar-day-label">Mon</span>
         <span class="calendar-day-label">Tue</span>
         <span class="calendar-day-label">Wed</span>
