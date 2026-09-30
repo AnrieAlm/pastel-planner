@@ -90,14 +90,14 @@ def loginPage(request: Request):
     reason = "denied" if request.query_params.get("reason") == "denied" else ""
     return renderPage(request, "login.html", "login", {"reason": reason})
 
-
 # Today
 @app.get("/", response_class=HTMLResponse)
 def todayPage(request: Request):
     user, redirect = getUserOrRedirect(request)
     if redirect:
         return redirect
-    return renderPage(request, "today.html", "today", {"user": user, **getTodayView(user)})
+    return renderPage(request, "today.html", "today",
+                      {"user": user, **getTodayView(user), "habits": getHabitsForToday(user)})
 
 
 # Routine
@@ -133,13 +133,13 @@ def calendarPage(request: Request):
     return renderPage(request, "calendar.html", "calendar", {"user": user, "cal": view})
 
 
-# Habits
+# Habits: three slots, each with a 7-day strip and a gentle streak
 @app.get("/habits", response_class=HTMLResponse)
 def habitsPage(request: Request):
     user, redirect = getUserOrRedirect(request)
     if redirect:
         return redirect
-    return renderPage(request, "habits.html", "habits", {"user": user})
+    return renderPage(request, "habits.html", "habits", {"user": user, "hv": getHabitsView(user)})
 
 
 # Grocery list
@@ -376,7 +376,67 @@ def apiUndoDelete(noteId: str, request: Request):
         return JSONResponse({"error": "not found"}, status_code=404)
     return {"ok": True}
 
+# ---------- Habits. They live inside the user document (max 3), so every change targets
+# ---------- the user document of the logged-in person only.
 
+# Add a habit (no habit_id) or change one (with habit_id)
+@app.post("/save-habit")
+def saveHabit(request: Request, habitId: str = Form("", alias="habit_id"), name: str = Form(""),
+              time: str = Form(""), days: str = Form(""), active: str = Form(""),
+              nextUrl: str = Form("/habits", alias="next")):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    cleanName = cleanText(name, NAME_MAX)
+    if cleanName:
+        fields = {"name": cleanName, "time": cleanTime(time), "days": cleanDays(days), "active": active == "on"}
+        if habitId:
+            users.update_one({"user_id": user["user_id"], "habits.habit_id": habitId},
+                             {"$set": {"habits.$." + key: value for key, value in fields.items()}})
+        else:
+            # Only adds if there are fewer than 3 habits, so the 3 slots can never overflow
+            users.update_one({"user_id": user["user_id"], f"habits.{SLOT_LIMIT - 1}": {"$exists": False}},
+                             {"$push": {"habits": {"habit_id": uuid4().hex[:12], **fields}}})
+    return RedirectResponse(safeNext(nextUrl, "/habits"), status_code=302)
+
+
+# Take a habit out, which frees its slot
+@app.post("/remove-habit/{habitId}")
+def removeHabit(habitId: str, request: Request, nextUrl: str = Form("/habits", alias="next")):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    users.update_one({"user_id": user["user_id"]}, {"$pull": {"habits": {"habit_id": habitId}}})
+    return RedirectResponse(safeNext(nextUrl, "/habits"), status_code=302)
+
+
+# What the tick button sends: which day, and whether it is now done
+class HabitLogBody(BaseModel):
+    date: str = ""
+    done: bool = True
+
+
+# JSON route: tick or un-tick a habit on a day (today, or up to 14 days back).
+# Answers 401 if not logged in, and sends back the new streak words for the page to show.
+@app.post("/api/habits/{habitId}/log")
+def apiHabitLog(habitId: str, body: HabitLogBody, request: Request):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+
+    if habitId not in [h["habit_id"] for h in user.get("habits", [])]:
+        return JSONResponse({"error": "not found"}, status_code=404)
+
+    today = getToday(user["timezone"])
+    day = cleanDate(body.date) or today.isoformat()
+    if day > today.isoformat() or day < (today - timedelta(days=14)).isoformat():
+        return JSONResponse({"error": "that day can't be changed"}, status_code=400)
+
+    setHabitLog(user["user_id"], habitId, day, body.done)
+    state = getHabitState(user, habitId)
+    return {"ok": True, "date": day, "done": body.done, **state}
 # Health check: handy for testing the server is up
 @app.get("/health")
 def health():
