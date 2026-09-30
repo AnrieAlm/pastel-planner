@@ -18,12 +18,14 @@ client = MongoClient(mongoUri, server_api=ServerApi("1"))
 # Pick the database by name (falls back to "calyx-planner")
 db = client[os.environ.get("MONGODB_DB", "calyx-planner")]
 
-# The four collections from the data model. Every query on them must filter by user_id.
+# The collections from the data model (grocery is the shopping list, bucket_items is the wish list).
+# Every query on them must filter by user_id.
 users = db["users"]
 notes = db["notes"]
 habit_logs = db["habit_logs"]
 devices = db["devices"]
 grocery = db["grocery"]
+bucket_items = db["bucket_items"]
 
 
 # Indexes make lookups fast and stop duplicates. Creating one that already exists does nothing.
@@ -33,3 +35,4 @@ def createIndexes():
     habit_logs.create_index([("user_id", 1), ("date", 1)], unique=True)
     devices.create_index("fcm_token", unique=True)
     grocery.create_index([("user_id", 1), ("deleted_at", 1)])
+    bucket_items.create_index([("user_id", 1), ("deleted_at", 1)])
