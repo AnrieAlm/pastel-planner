@@ -4,7 +4,6 @@
 <form method="post" id="edit-note-form" action="/update-note/">
   <input type="hidden" name="next" value="/notes" />
   <input type="hidden" name="color" value="1" />
-  <input type="hidden" name="has_bucket" value="1" />
 
   <label for="note-title">Title</label>
   <input type="text" id="note-title" name="title" maxlength="200" required />
@@ -46,21 +45,11 @@
     <input type="date" id="note-finish-by" name="finish_by" />
   </div>
 
-  <label for="note-bucket">Bucket list</label>
-  <select id="note-bucket" name="bucket">
-    <option value="">Not on the bucket list</option>
-    <option value="movies">🎬 Movies</option>
-    <option value="places">📍 Places</option>
-    <option value="things">📦 Things</option>
-    <option value="experiences">✨ Experiences</option>
-  </select>
-
   <div class="modal-actions" id="note-calendar-actions">
     <a class="btn-modal-secondary" id="note-gcal" href="#" target="_blank" rel="noopener noreferrer">Add to Google Calendar</a>
     <a class="btn-modal-secondary" id="note-ics" href="#">Download .ics</a>
   </div>
   <p class="modal-hint hidden" id="note-calendar-hint">Add a date or a deadline (and save) to put this in your calendar.</p>
-
   <div class="modal-actions">
     <button type="submit" class="btn-modal-primary">Save</button>
     <button type="submit" class="btn-modal-secondary" id="note-done-btn" formnovalidate>Mark done</button>
