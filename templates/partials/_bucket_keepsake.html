@@ -3,9 +3,9 @@
 {% macro keepsake(note, done=false) -%}
 <div class="bucket-keepsake{% if done %} no-animate done{% endif %}" role="button" tabindex="0"
      aria-label="{{ note.title }}, open"
-     data-note-id="{{ note.id }}" data-title="{{ note.title }}" data-bucket="{{ note.bucket }}"
-     data-link="{{ note.link or '' }}" data-date="{{ note.date or '' }}" data-done="{{ 'true' if done else 'false' }}">
-  {% if note.bucket == "movies" %}
+     data-note-id="{{ note.id }}" data-title="{{ note.title }}" data-category="{{ note.category }}"
+     data-link="{{ note.link or '' }}" data-planned="{{ note.planned or '' }}" data-done="{{ 'true' if done else 'false' }}">
+  {% if note.category == "movies" %}
   <div class="bucket-ticket">
     {% if done %}<div class="bucket-done-stamp">Done<span class="bucket-done-stamp-date">{{ note.doneDate }}</span></div>{% endif %}
     <div class="bucket-ticket-main">
@@ -18,7 +18,7 @@
     <div class="bucket-ticket-perf"></div>
     <div class="bucket-ticket-stub">ADMIT ONE</div>
   </div>
-  {% elif note.bucket == "places" %}
+  {% elif note.category == "places" %}
   <div class="bucket-postcard">
     {% if done %}<div class="bucket-done-stamp">Done<span class="bucket-done-stamp-date">{{ note.doneDate }}</span></div>{% endif %}
     <div class="bucket-postal-perf"></div>
@@ -28,7 +28,7 @@
     <div class="bucket-detail">{{ note.detail }}</div>
     <div class="bucket-postcard-divider"></div>
   </div>
-  {% elif note.bucket == "things" %}
+  {% elif note.category == "things" %}
   <div class="bucket-tag-wrap">
     <div class="bucket-tag-string"></div>
     <div class="bucket-tag">
