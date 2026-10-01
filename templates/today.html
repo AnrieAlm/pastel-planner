@@ -76,33 +76,28 @@
       </div>
     </div>
 
-    <!-- Morning routine -->
-       {# Morning routine: still sample blocks (the real, editable routine arrives in a later stage),
-       but "Now" is no longer a fixed label — the script below moves it with the real clock. #}
+    {# Routine: every block from every routine active today, merged into one timeline.
+       "Now" moves with the real clock; ticking a block also ticks its linked habit. #}
+    {% if routineBlocks %}
     <div class="morning-routine" id="morning-routine">
-      <h3>☀️ Morning routine</h3>
+      <h3>☀️ Today’s routine</h3>
 
-      <div class="timeline-block" data-time="07:00">
-        <span class="timeline-time">7:00</span>
-        <span class="timeline-label">☕ Wake up &amp; coffee — 10 min</span>
+      {% for block in routineBlocks %}
+      <div class="timeline-block{% if block.block_id in doneBlockIds %} ticked{% endif %}"
+           data-time="{{ block.time }}" data-routine-id="{{ block.routine_id }}" data-block-id="{{ block.block_id }}">
+        <button type="button" class="timeline-tick" aria-pressed="{{ 'true' if block.block_id in doneBlockIds else 'false' }}"
+                aria-label="{{ 'Mark not done' if block.block_id in doneBlockIds else 'Mark done' }}: {{ block.name }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M6 12.5l4 4 8-9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="timeline-time">{{ block.timeLabel }}</span>
+        <span class="timeline-label">{{ block.name }} — {{ block.duration_min }} min{% if block.linked_habit_id %} · habit{% endif %}</span>
       </div>
-      <div class="timeline-block" data-time="07:10">
-        <span class="timeline-time">7:10</span>
-        <span class="timeline-label">🧘 Morning yoga — 20 min · habit ✓</span>
-      </div>
-      <div class="timeline-block" data-time="07:35">
-        <span class="timeline-time">7:35</span>
-        <span class="timeline-label">🚿 Shower — 15 min</span>
-      </div>
-      <div class="timeline-block" data-time="07:50">
-        <span class="timeline-time">7:50</span>
-        <span class="timeline-label">🍳 Breakfast &amp; journal ⚡ — shortened, 9am lecture, 20 min</span>
-      </div>
-      <div class="timeline-block" data-time="08:10" data-final="true">
-        <span class="timeline-time">8:10</span>
-        <span class="timeline-label">🚶 Leave for Griffith — depart</span>
-      </div>
+      {% endfor %}
     </div>
+    {% elif not user.habits %}{# a brand new account: no need to mention routines yet either #}
+    {% else %}
+    <p class="today-empty"><a href="/routine">Shape your day with a routine</a> and it will show up here.</p>
+    {% endif %}
 
     {# From yesterday: unfinished notes from earlier days #}
     {% if rollover %}
