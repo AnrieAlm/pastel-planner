@@ -4,11 +4,44 @@
 const Settings = {
   STORAGE_KEY: 'calyx-planner-theme',
 
-  init() {
+    init() {
     this.initTheme();
     this.initDangerZone();
     this.initProfileSave();
     this.initExportData();
+    this.initPush();
+  },
+
+  // "Push notifications": reflects whether this browser is actually registered, and turns
+  // registration on or off through window.CalyxPush (see push.js). The three toggles under it
+  // (vibration, habit reminders, deadline alerts) are still a visual preview only — reminders.py
+  // currently sends all three kinds together whenever this master toggle is on.
+  async initPush() {
+    const toggle = document.getElementById('toggle-push');
+    const note = document.getElementById('toggle-push-note');
+    if (!toggle || !window.CalyxPush) return;
+
+    const supported = await CalyxPush.isSupported();
+    if (!supported) {
+      toggle.checked = false;
+      toggle.disabled = true;
+      if (note) note.textContent = 'Not available in this browser yet — try installing the app first.';
+      return;
+    }
+
+    toggle.checked = CalyxPush.permission() === 'granted';
+
+    toggle.addEventListener('change', async () => {
+      toggle.disabled = true;
+      if (toggle.checked) {
+        const ok = await CalyxPush.enable();
+        toggle.checked = ok;
+        if (!ok && note) note.textContent = 'Notifications were blocked. Check your browser\u2019s site settings to allow them.';
+      } else {
+        await CalyxPush.disable();
+      }
+      toggle.disabled = false;
+    });
   },
 
   // "Save changes" has nowhere real to persist to yet (no backend),
