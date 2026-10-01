@@ -1,0 +1,22 @@
+{# One block row inside a routine's edit form: a time, a name, a duration, and an optional
+   linked habit. Used both for each of a routine's real blocks, and (with block=None) as the
+   empty row routine.js clones when "+ Add block" is pressed. #}
+{% macro blockRow(block, userHabits) %}
+<div class="routine-block-row" data-block-id="{{ block.block_id if block else '' }}">
+  <input type="time" name="times" value="{{ block.time if block else '' }}" aria-label="Block time" required />
+  <input type="text" name="names" value="{{ block.name if block else '' }}" maxlength="60" placeholder="Block name" aria-label="Block name" required />
+  <span class="routine-duration-field">
+    <input type="number" name="durations" value="{{ block.duration_min if block else 5 }}" min="1" max="240" aria-label="Minutes" />
+    <span aria-hidden="true">min</span>
+  </span>
+  <select name="habits" aria-label="Linked habit">
+    <option value="">No linked habit</option>
+    {% for h in userHabits %}
+    <option value="{{ h.habit_id }}"{% if block and block.linked_habit_id == h.habit_id %} selected{% endif %}>{{ h.name }}</option>
+    {% endfor %}
+  </select>
+  <button type="button" class="routine-block-remove" aria-label="Remove this block">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-width="1.6" stroke-linecap="round"/></svg>
+  </button>
+</div>
+{% endmacro %}
