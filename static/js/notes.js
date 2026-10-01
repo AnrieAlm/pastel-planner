@@ -50,6 +50,7 @@ const Notes = {
     document.getElementById('note-time').value = note.time;
     document.getElementById('note-deadline').value = note.deadline;
     document.getElementById('note-finish-by').value = note.finishBy || '';
+    document.getElementById('note-remind').value = note.reminder || '';
     this.syncFinishBy(form);
     
     
