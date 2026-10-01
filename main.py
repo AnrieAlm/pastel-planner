@@ -27,7 +27,7 @@ from habits_helpers import (NAME_MAX, SLOT_LIMIT, cleanDays, getHabitState, getH
                             getHabitsView, setHabitLog)
 from routine_helpers import (addRoutine, buildBlocks, cleanDays as cleanRoutineDays, deleteRoutine,
                              findOverlaps, getDoneBlockIds, getRoutines, getTodayBlocks,
-                             toggleBlockDone, updateRoutine)
+                             mergeRoutines, toggleBlockDone, updateRoutine)
 from notes_helpers import (FILTERS, CONTENT_MAX, TITLE_MAX, cleanColor, cleanDate, cleanFinishBy,
                            cleanReminder, cleanText, cleanTime, getNotes, getToday, getTodayView,
                            reminderLocalValue, resolveWhen, sameInstant, toObjectId)
@@ -672,7 +672,17 @@ def deleteRoutineRoute(routineId: str, request: Request, nextUrl: str = Form("/r
     deleteRoutine(user["user_id"], routineId)
     return RedirectResponse(safeNext(nextUrl, "/routine"), status_code=302)
 
+# Combines two of this person's routines into one (see routine_helpers.mergeRoutines). Offered
+# from the overlap warning when editing/adding a routine clashes with another active one.
+@app.post("/merge-routines/{keepId}/{mergeId}")
+def mergeRoutinesRoute(keepId: str, mergeId: str, request: Request,
+                       nextUrl: str = Form("/routine", alias="next")):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
 
+    mergeRoutines(user["user_id"], keepId, mergeId)
+    return RedirectResponse(safeNext(nextUrl, "/routine"), status_code=302)
 # JSON: tick (or un-tick) one of today's routine blocks. If it is linked to a habit, that habit
 # is ticked too, and its fresh streak words are sent back so Today can update instantly.
 class RoutineBlockBody(BaseModel):
