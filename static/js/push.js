@@ -47,13 +47,23 @@ window.CalyxPush = {
 
   // Asks for permission (only if not already decided), then registers this browser for push
   // and saves the token on the server. Returns true on success.
+    // Asks for permission (only if not already decided), then registers this browser for push
+  // and saves the token on the server. Returns true on success.
   async enable() {
-    if (!(await this.isSupported())) return false;
+    // Only plain, synchronous checks happen before requestPermission() — an `await` here first
+    // would make some browsers (Safari especially) stop treating this as a direct response to
+    // your tap, and silently refuse to show the popup at all.
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) return false;
 
     let permission = Notification.permission;
     if (permission === 'default') {
       permission = await Notification.requestPermission();
     }
+    if (permission !== 'granted') return false;
+
+    try {
+      if (!(await this.isSupported())) return false;
+      const registration = await navigator.serviceWorker.ready;
     if (permission !== 'granted') return false;
 
     try {
