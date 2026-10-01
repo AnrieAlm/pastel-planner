@@ -41,7 +41,7 @@ const Today = {
       originalTime: el.querySelector('.timeline-time').textContent,
     }));
 
-        const heading = container.querySelector('h3');
+    const heading = container.querySelector('h3');
 
     // The heading's icon and words shift with the time of day, so a dark evening doesn't
     // still say "Today's routine" under a sun. Adjust the hours here if these feel off.
