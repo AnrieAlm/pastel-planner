@@ -1,0 +1,67 @@
+{# One routine: a display view, and (hidden until "Edit" is tapped) a full edit form in its
+   place. routine.js toggles between the two; nothing here needs JavaScript to be readable. #}
+{% from "partials/_routine_block_row.html" import blockRow %}
+<div class="routine-card" data-routine-id="{{ routine.id }}">
+
+  {# ---------- Display ---------- #}
+  <div class="routine-display">
+    <div class="routine-card-header">
+      <h3>{{ routine.name }}</h3>
+      <button type="button" class="routine-edit-btn" data-edit-routine aria-label="Edit {{ routine.name }}">Edit</button>
+    </div>
+    <span class="routine-meta">{{ routine.timeSpan }} · {{ routine.blocks|length }} block{% if routine.blocks|length != 1 %}s{% endif %}{% if not routine.active %} · Paused{% endif %}</span>
+
+    <div class="routine-days" aria-hidden="true">
+      {% for d, label in [('mon','M'),('tue','T'),('wed','W'),('thu','T'),('fri','F'),('sat','S'),('sun','S')] %}
+      <span class="routine-day{% if d in routine.days %} active{% endif %}">{{ label }}</span>
+      {% endfor %}
+    </div>
+
+    {% for block in routine.blocks %}
+    <div class="routine-block">
+      <span class="block-time">{{ block.timeLabel }}</span>
+      <span class="block-name">{{ block.name }}</span>
+      <span class="block-duration">{{ block.duration_min }} min</span>
+      {% if block.linked_habit_id %}<span class="block-tag">🔗 habit</span>{% endif %}
+    </div>
+    {% else %}
+    <p class="routine-note">No blocks yet — tap Edit to add some.</p>
+    {% endfor %}
+  </div>
+
+  {# ---------- Edit (hidden until "Edit" is tapped) ---------- #}
+  <form method="post" action="/update-routine/{{ routine.id }}" class="routine-edit-form hidden">
+    <input type="hidden" name="next" value="/routine" />
+    <input type="hidden" name="days" class="routine-days-value" />
+
+    <label for="routine-name-{{ routine.id }}">Name</label>
+    <input type="text" id="routine-name-{{ routine.id }}" name="name" value="{{ routine.name }}" maxlength="60" required />
+
+    <label style="display:flex; align-items:center; gap:var(--sp-xs);">
+      <input type="checkbox" name="active"{% if routine.active %} checked{% endif %} /> Active
+    </label>
+
+    <label id="routine-days-label-{{ routine.id }}">Days</label>
+    <div class="day-picker" role="group" aria-labelledby="routine-days-label-{{ routine.id }}">
+      {% for d, label in [('mon','Mon'),('tue','Tue'),('wed','Wed'),('thu','Thu'),('fri','Fri'),('sat','Sat'),('sun','Sun')] %}
+      <button type="button" data-day="{{ d }}" class="{% if d in routine.days %}active{% endif %}" aria-pressed="{{ 'true' if d in routine.days else 'false' }}">{{ label }}</button>
+      {% endfor %}
+    </div>
+
+    <label>Blocks</label>
+    <div class="routine-block-rows">
+      {% for block in routine.blocks %}
+      {{ blockRow(block, userHabits) }}
+      {% endfor %}
+    </div>
+    <button type="button" class="routine-add-block">+ Add block</button>
+
+    <div class="routine-overlap-warning hidden" role="alert"></div>
+
+    <div class="modal-actions">
+      <button type="submit" class="btn-modal-primary">Save</button>
+      <button type="button" class="btn-modal-secondary routine-cancel-btn">Cancel</button>
+      <button type="submit" formaction="/delete-routine/{{ routine.id }}" formnovalidate class="btn-modal-danger">Delete</button>
+    </div>
+  </form>
+</div>
