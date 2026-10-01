@@ -29,7 +29,7 @@ const Settings = {
       return;
     }
 
-    toggle.checked = CalyxPush.permission() === 'granted';
+    toggle.checked = CalyxPush.isEnabled();
 
     toggle.addEventListener('change', async () => {
       toggle.disabled = true;
