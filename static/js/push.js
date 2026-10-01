@@ -49,6 +49,8 @@ window.CalyxPush = {
   // and saves the token on the server. Returns true on success.
     // Asks for permission (only if not already decided), then registers this browser for push
   // and saves the token on the server. Returns true on success.
+    // Asks for permission (only if not already decided), then registers this browser for push
+  // and saves the token on the server. Returns true on success.
   async enable() {
     // Only plain, synchronous checks happen before requestPermission() — an `await` here first
     // would make some browsers (Safari especially) stop treating this as a direct response to
@@ -63,10 +65,6 @@ window.CalyxPush = {
 
     try {
       if (!(await this.isSupported())) return false;
-      const registration = await navigator.serviceWorker.ready;
-    if (permission !== 'granted') return false;
-
-    try {
       const registration = await navigator.serviceWorker.ready;
       const app = getApps()[0] || initializeApp(firebaseConfig);
       const messaging = getMessaging(app);
