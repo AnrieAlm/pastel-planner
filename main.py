@@ -1,5 +1,4 @@
-# Calyx Planner - main.py: all the routes (web addresses) of the app.
-# Pages are drawn by Jinja2 templates; every route checks the login first.
+
 
 import os
 import time
@@ -26,6 +25,9 @@ from grocery_helpers import (addItems, clearChecked, getGroceryItems, removeItem
                              setChecked)
 from habits_helpers import (NAME_MAX, SLOT_LIMIT, cleanDays, getHabitState, getHabitsForToday,
                             getHabitsView, setHabitLog)
+from routine_helpers import (addRoutine, buildBlocks, cleanDays as cleanRoutineDays, deleteRoutine,
+                             findOverlaps, getDoneBlockIds, getRoutines, getTodayBlocks,
+                             toggleBlockDone, updateRoutine)
 from notes_helpers import (FILTERS, CONTENT_MAX, TITLE_MAX, cleanColor, cleanDate, cleanFinishBy,
                            cleanReminder, cleanText, cleanTime, getNotes, getToday, getTodayView,
                            reminderLocalValue, resolveWhen, sameInstant, toObjectId)
@@ -62,6 +64,7 @@ templates = Jinja2Templates(directory="templates")
 # base.html adds it to the CSS/JS links (style.css?v=123) so phones and
 # browsers always fetch the new files instead of showing an old cached copy.
 templates.env.globals["assetVersion"] = str(int(time.time()))
+
 
 # ---------- App install files (PWA). These are public on purpose: the browser needs them before anyone logs in.
 # They are served from the site root (not /static/) so they control the whole app.
@@ -101,6 +104,7 @@ def appIcon(name: str):
 def favicon():
     return Response(makeIcon("favicon-32.png"), media_type="image/png",
                     headers={"Cache-Control": "public, max-age=86400"})
+
 
 # Small helper: render one template. "section" tells base.html which
 # sidebar/bottom-nav link to highlight.
@@ -153,17 +157,23 @@ def todayPage(request: Request):
     user, redirect = getUserOrRedirect(request)
     if redirect:
         return redirect
+    today = getToday(user["timezone"])
+    routineBlocks = getTodayBlocks(user["user_id"], today)
+    doneBlockIds = getDoneBlockIds(user["user_id"], today.isoformat())
     return renderPage(request, "today.html", "today",
-                      {"user": user, **getTodayView(user), "habits": getHabitsForToday(user)})
+                      {"user": user, **getTodayView(user), "habits": getHabitsForToday(user),
+                       "routineBlocks": routineBlocks, "doneBlockIds": doneBlockIds})
 
 
-# Routine
+# Routine: every routine, each editable in place (see routine.js)
 @app.get("/routine", response_class=HTMLResponse)
 def routinePage(request: Request):
     user, redirect = getUserOrRedirect(request)
     if redirect:
         return redirect
-    return renderPage(request, "routine.html", "routine", {"user": user})
+    return renderPage(request, "routine.html", "routine",
+                      {"user": user, "routines": getRoutines(user["user_id"]),
+                       "userHabits": user.get("habits", [])})
 
 
 # Notes page: shows this person's real notes, filtered by the chip they picked
@@ -242,6 +252,42 @@ def apiMe(request: Request):
 # ---------- notes with THIS user's user_id, then redirects back with status 302.
 
 # Add a note (from the "New note" sheet)
+@app.post("/add-note")
+def addNote(request: Request, title: str = Form(""), content: str = Form(""),
+            color: str = Form("1"), urgent: str = Form(""), date: str = Form(""),
+            time: str = Form(""), deadline: str = Form(""), finishBy: str = Form("", alias="finish_by"),
+            when: str = Form(""), remind: str = Form(""), nextUrl: str = Form("/notes", alias="next")):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    cleanTitle = cleanText(title, TITLE_MAX)
+    if cleanTitle:
+        # The capture box sends "today" or a weekday name instead of an exact date;
+        # we turn it into a date using the person's own timezone
+        noteDate = cleanDate(date) or resolveWhen(when, getToday(user["timezone"]))
+        noteDeadline = cleanDate(deadline)
+        notes.insert_one({
+            "user_id": user["user_id"],
+            "title": cleanTitle,
+            "content": cleanText(content, CONTENT_MAX),
+            "color": cleanColor(color),
+            "created_at": datetime.now(timezone.utc),
+            "date": noteDate,
+            "time": cleanTime(time) if noteDate else None,
+            "deadline": noteDeadline,
+            "finish_by": cleanFinishBy(finishBy, noteDeadline),
+            "urgent": urgent == "on",
+            "reminder_at": cleanReminder(remind, user["timezone"]),
+            "reminder_sent": False,
+            "done": False,
+            "completed_at": None,
+            "dismissed": False,
+            "deleted_at": None,
+        })
+    return RedirectResponse(safeNext(nextUrl), status_code=302)
+
+
 # Save changes to a note (from the "Edit note" sheet)
 @app.post("/update-note/{noteId}")
 def updateNote(noteId: str, request: Request, title: str = Form(""), content: str = Form(""),
@@ -279,38 +325,6 @@ def updateNote(noteId: str, request: Request, title: str = Form(""), content: st
                 changes["title"] = cleanTitle
             notes.update_one({"_id": objectId, "user_id": user["user_id"], "deleted_at": None},
                              {"$set": changes})
-    return RedirectResponse(safeNext(nextUrl), status_code=302)
-
-
-# Save changes to a note (from the "Edit note" sheet)
-@app.post("/update-note/{noteId}")
-def updateNote(noteId: str, request: Request, title: str = Form(""), content: str = Form(""),
-               color: str = Form("1"), urgent: str = Form(""), date: str = Form(""),
-               time: str = Form(""), deadline: str = Form(""), finishBy: str = Form("", alias="finish_by"),
-               nextUrl: str = Form("/notes", alias="next")):
-    user, redirect = getUserOrRedirect(request)
-    if redirect:
-        return redirect
-
-    objectId = toObjectId(noteId)
-    if objectId is not None:
-        noteDate = cleanDate(date)
-        noteDeadline = cleanDate(deadline)
-        changes = {
-            "content": cleanText(content, CONTENT_MAX),
-            "color": cleanColor(color),
-            "urgent": urgent == "on",
-            "date": noteDate,
-            "time": cleanTime(time) if noteDate else None,
-            "deadline": noteDeadline,
-            "finish_by": cleanFinishBy(finishBy, noteDeadline),
-        }
-        # An empty title is ignored, so a note never ends up with no name
-        cleanTitle = cleanText(title, TITLE_MAX)
-        if cleanTitle:
-            changes["title"] = cleanTitle
-        notes.update_one({"_id": objectId, "user_id": user["user_id"], "deleted_at": None},
-                         {"$set": changes})
     return RedirectResponse(safeNext(nextUrl), status_code=302)
 
 
@@ -587,6 +601,103 @@ def apiHabitLog(habitId: str, body: HabitLogBody, request: Request):
     return {"ok": True, "date": day, "done": body.done, **state}
 
 
+# ---------- Routines. Several can be active on the same day; Today merges all of them into
+# ---------- one timeline. Ticking a block also ticks its linked habit, if it has one.
+
+# Checks whether a routine (new or being edited) would collide in time with another active
+# routine on a shared day. A JSON route so the editor can warn BEFORE saving, without losing
+# whatever the person has typed so far.
+class RoutineCheckBody(BaseModel):
+    routine_id: str = ""
+    days: list[str] = []
+    times: list[str] = []
+    names: list[str] = []
+    durations: list[str] = []
+
+
+@app.post("/api/routines/check-overlap")
+def apiCheckRoutineOverlap(body: RoutineCheckBody, request: Request):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+
+    userHabitIds = {h["habit_id"] for h in user.get("habits", [])}
+    days = cleanRoutineDays(",".join(body.days))
+    blocks = buildBlocks(body.times, body.names, body.durations, [""] * len(body.times), userHabitIds)
+    excludeId = toObjectId(body.routine_id) if body.routine_id else None
+    return {"conflicts": findOverlaps(user["user_id"], days, blocks, excludeId)}
+
+
+# Add a routine (the editor sends its blocks as matching lists: times[], names[], durations[],
+# habits[] — one entry per row, in the order they appear on the page)
+@app.post("/add-routine")
+def addRoutineRoute(request: Request, name: str = Form(""), days: str = Form(""),
+                    times: list[str] = Form([]), names: list[str] = Form([]),
+                    durations: list[str] = Form([]), habits: list[str] = Form([]),
+                    nextUrl: str = Form("/routine", alias="next")):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    userHabitIds = {h["habit_id"] for h in user.get("habits", [])}
+    blocks = buildBlocks(times, names, durations, habits, userHabitIds)
+    addRoutine(user["user_id"], name, cleanRoutineDays(days), blocks)
+    return RedirectResponse(safeNext(nextUrl, "/routine"), status_code=302)
+
+
+# Save changes to a routine
+@app.post("/update-routine/{routineId}")
+def updateRoutineRoute(routineId: str, request: Request, name: str = Form(""), days: str = Form(""),
+                       active: str = Form(""), times: list[str] = Form([]), names: list[str] = Form([]),
+                       durations: list[str] = Form([]), habits: list[str] = Form([]),
+                       nextUrl: str = Form("/routine", alias="next")):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    userHabitIds = {h["habit_id"] for h in user.get("habits", [])}
+    blocks = buildBlocks(times, names, durations, habits, userHabitIds)
+    updateRoutine(user["user_id"], routineId, name, cleanRoutineDays(days), blocks, active == "on")
+    return RedirectResponse(safeNext(nextUrl, "/routine"), status_code=302)
+
+
+# Delete a routine. Unlike notes/bucket items/groceries, this is NOT soft-deleted — removing a
+# whole routine is a deliberate, infrequent action, so there is no Undo for it.
+@app.post("/delete-routine/{routineId}")
+def deleteRoutineRoute(routineId: str, request: Request, nextUrl: str = Form("/routine", alias="next")):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    deleteRoutine(user["user_id"], routineId)
+    return RedirectResponse(safeNext(nextUrl, "/routine"), status_code=302)
+
+
+# JSON: tick (or un-tick) one of today's routine blocks. If it is linked to a habit, that habit
+# is ticked too, and its fresh streak words are sent back so Today can update instantly.
+class RoutineBlockBody(BaseModel):
+    date: str = ""
+
+
+@app.post("/api/routines/{routineId}/blocks/{blockId}/toggle")
+def apiToggleRoutineBlock(routineId: str, blockId: str, body: RoutineBlockBody, request: Request):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+
+    today = getToday(user["timezone"])
+    day = cleanDate(body.date) or today.isoformat()
+    ok, info = toggleBlockDone(user["user_id"], routineId, blockId, day)
+    if not ok:
+        return JSONResponse({"error": "not found"}, status_code=404)
+
+    habitState = None
+    if info["linkedHabitId"] and day == today.isoformat():
+        setHabitLog(user["user_id"], info["linkedHabitId"], day, info["done"])
+        habitState = getHabitState(user, info["linkedHabitId"])
+    return {"ok": True, "done": info["done"], "habitId": info["linkedHabitId"], "habit": habitState}
+
+
 # ---------- Grocery list. Forms for adding; small JSON routes for the instant actions
 # ---------- (tick, remove, clear, undo). Every one only touches THIS user's items.
 
@@ -668,6 +779,51 @@ def apiGroceryRestore(body: GroceryRestoreBody, request: Request):
     if not count:
         return JSONResponse({"error": "nothing to undo"}, status_code=404)
     return {"ok": True, "count": count}
+
+
+# ---------- Push notifications (Stage 8). The live app only stores WHICH devices should get a
+# ---------- push; the actual sending happens in reminders.py, run on a schedule by GitHub Actions.
+
+# Public, tiny settings the browser needs before it can register for push. The VAPID key is a
+# public key (that is how Web Push works) so there is nothing sensitive in this response.
+@app.get("/api/config")
+def apiConfig():
+    return {"vapidKey": os.environ.get("VAPID_KEY", "")}
+
+
+class DeviceBody(BaseModel):
+    token: str = ""
+
+
+# Saves (or refreshes) this browser's push token against the logged-in person.
+# The same token can only ever belong to one person at a time (see db.py's unique index),
+# so signing in as someone else on the same device quietly moves the token to them.
+@app.post("/api/devices")
+def apiRegisterDevice(body: DeviceBody, request: Request):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+    token = body.token.strip()
+    if not token:
+        return JSONResponse({"error": "no token"}, status_code=400)
+
+    devices.update_one(
+        {"fcm_token": token},
+        {"$set": {"user_id": user["user_id"], "fcm_token": token, "updated_at": datetime.now(timezone.utc)},
+         "$setOnInsert": {"created_at": datetime.now(timezone.utc)}},
+        upsert=True,
+    )
+    return {"ok": True}
+
+
+# Forgets this browser's token (Settings > Push notifications, switched off)
+@app.delete("/api/devices")
+def apiUnregisterDevice(body: DeviceBody, request: Request):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+    devices.delete_one({"fcm_token": body.token.strip(), "user_id": user["user_id"]})
+    return {"ok": True}
 
 
 # Health check: handy for testing the server is up
