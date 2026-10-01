@@ -69,11 +69,11 @@ def getCalendarView(user, monthParam, dayParam):
     plannedByDay = defaultdict(list)
     for note in notes.find({"user_id": userId, "deleted_at": None,
                             "date": {"$gte": firstDay, "$lte": lastDay}}):
-        plannedByDay[note["date"]].append(decorate(note, today))
+        plannedByDay[note["date"]].append(decorate(note, today, user["timezone"]))
     dueByDay = defaultdict(list)
     for note in notes.find({"user_id": userId, "deleted_at": None, "done": False,
                             "deadline": {"$gte": firstDay, "$lte": lastDay}}):
-        dueByDay[note["deadline"]].append(decorate(note, today))
+        dueByDay[note["deadline"]].append(decorate(note, today, user["timezone"]))
 
     habits = user.get("habits", [])
     weeks = []
