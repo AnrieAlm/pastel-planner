@@ -36,7 +36,8 @@
               data-date="{{ note.date or '' }}"
               data-time="{{ note.time or '' }}"
               data-deadline="{{ note.deadline or '' }}"
-              data-finish-by="{{ note.finish_by or '' }}">
+              data-finish-by="{{ note.finish_by or '' }}"
+              data-reminder="{{ note.reminderLocal }}">
           
         <h4>{% if note.done %}✓ {% elif note.urgent %}⚑ {% endif %}{{ note.title }}</h4>
         {% if note.content %}<p>{{ note.content }}</p>{% endif %}
