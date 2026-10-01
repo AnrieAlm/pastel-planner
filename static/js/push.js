@@ -44,6 +44,12 @@ window.CalyxPush = {
   permission() {
     return ('Notification' in window) ? Notification.permission : null;
   },
+    // Whether THIS app currently has a registered device — the actual signal for the Settings
+  // toggle, since browser permission alone can't tell "granted" apart from "granted, but the
+  // person turned the feature off in here"
+  isEnabled() {
+    return Boolean(localStorage.getItem(LAST_TOKEN_KEY));
+  },
 
   // Asks for permission (only if not already decided), then registers this browser for push
   // and saves the token on the server. Returns true on success.
