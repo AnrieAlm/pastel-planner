@@ -85,6 +85,10 @@
   <script src="/static/js/sinead-ai.js?v={{ assetVersion }}"></script>
   <script src="/static/js/pwa.js?v={{ assetVersion }}"></script>
 
+  {# Push notifications: a module script (it uses import), loaded on every page so a returning
+     visitor's registration stays fresh even if they never open Settings again #}
+  <script type="module" src="/static/js/push.js?v={{ assetVersion }}"></script>
+
   {# Firebase login: a module script (it uses import). It keeps the "token" cookie fresh on every page. #}
   <script type="module" src="/static/js/firebase-login.js?v={{ assetVersion }}"></script>
 </body>
