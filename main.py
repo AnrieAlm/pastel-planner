@@ -1,4 +1,5 @@
-
+# Calyx Planner - main.py: all the routes (web addresses) of the app.
+# Pages are drawn by Jinja2 templates; every route checks the login first.
 
 import os
 import time
@@ -672,6 +673,7 @@ def deleteRoutineRoute(routineId: str, request: Request, nextUrl: str = Form("/r
     deleteRoutine(user["user_id"], routineId)
     return RedirectResponse(safeNext(nextUrl, "/routine"), status_code=302)
 
+
 # Combines two of this person's routines into one (see routine_helpers.mergeRoutines). Offered
 # from the overlap warning when editing/adding a routine clashes with another active one.
 @app.post("/merge-routines/{keepId}/{mergeId}")
@@ -683,6 +685,8 @@ def mergeRoutinesRoute(keepId: str, mergeId: str, request: Request,
 
     mergeRoutines(user["user_id"], keepId, mergeId)
     return RedirectResponse(safeNext(nextUrl, "/routine"), status_code=302)
+
+
 # JSON: tick (or un-tick) one of today's routine blocks. If it is linked to a habit, that habit
 # is ticked too, and its fresh streak words are sent back so Today can update instantly.
 class RoutineBlockBody(BaseModel):
