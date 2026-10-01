@@ -61,6 +61,48 @@ self.addEventListener('fetch', (event) => {
   // Everything else (/api/..., /health, your data) is left alone and goes to the network
 });
 
+
+// ---------- Push notifications (Stage 8) ----------
+// FCM delivers a data-only message here when the app is closed or in the background. There is
+// no "notification" field on purpose (we build the notification ourselves), so nothing appears
+// unless we explicitly call showNotification — this also means a silent push (still useful for
+// waking the app up later) is possible, though Calyx Planner does not use that yet.
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch (error) {
+    return;
+  }
+  const data = payload.data || payload;
+  const title = data.title || 'Calyx Planner';
+  const options = {
+    body: data.body || '',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/favicon-32.png',
+    tag: data.tag || undefined,      // a repeat push with the same tag replaces the old one
+    data: { url: data.url || '/' },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Tapping the notification focuses an already-open tab if there is one, otherwise opens a new one
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientsList) => {
+      for (const client of clientsList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.navigate(url);
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(url);
+    })
+  );
+});
+
 // The waking page, from the shelf we filled at install time
 async function wakingPage() {
   const cached = await caches.match(WAKING_URL);
