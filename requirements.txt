@@ -8,3 +8,4 @@ requests
 cachecontrol
 tzdata
 pillow
+firebase-admin
