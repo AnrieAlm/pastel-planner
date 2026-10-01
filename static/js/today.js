@@ -41,11 +41,24 @@ const Today = {
       originalTime: el.querySelector('.timeline-time').textContent,
     }));
 
+        const heading = container.querySelector('h3');
+
+    // The heading's icon and words shift with the time of day, so a dark evening doesn't
+    // still say "Today's routine" under a sun. Adjust the hours here if these feel off.
+    const headingFor = (hour) => {
+      if (hour >= 20 || hour < 5) return '\u{1F319} Tonight\u2019s routine';
+      if (hour >= 17) return '\u{1F307} This evening';
+      return '\u2600\uFE0F Today\u2019s routine';
+    };
+
     const update = () => {
       const now = new Date();
       const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
+      if (heading) heading.textContent = headingFor(now.getHours());
+
       schedule.forEach((block, i) => {
+        
         const next = schedule[i + 1];
         // The last block of the day has no "next" to end at, so it stays "active" for 15
         // minutes rather than having a real duration to compare against
