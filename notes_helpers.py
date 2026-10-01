@@ -1,6 +1,5 @@
 # notes_helpers.py - reading notes from MongoDB and preparing them for the page.
 # Every query here filters by user_id, so one person can never see another person's notes.
-
 from datetime import date, datetime, timezone
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
@@ -122,9 +121,11 @@ def getNotes(userId, filterName, timezoneName):
 
     today = getToday(timezoneName)
     noteList = []
+    
     for note in notes.find(query).sort(sortBy):
         note["id"] = str(note["_id"])
         note["meta"] = describeNote(note, today)
+        note["reminderLocal"] = reminderLocalValue(note.get("reminder_at"), timezoneName)
         noteList.append(note)
     return noteList
 
@@ -239,10 +240,11 @@ def describeUrgent(note, today):
 
 
 # Adds the display fields the templates use (id, time label, the details for the edit sheet)
-def decorate(note, today):
+def decorate(note, today, timezoneName=""):
     note["id"] = str(note["_id"])
     note["meta"] = describeNote(note, today)
     note["timeLabel"] = niceTime(note["time"]) if note.get("time") else "Anytime"
+    note["reminderLocal"] = reminderLocalValue(note.get("reminder_at"), timezoneName) if timezoneName else ""
     return note
 
 
@@ -262,7 +264,7 @@ def getTodayView(user):
 
     urgent = []
     for note in getUrgentNotes(userId, today):
-        decorate(note, today)
+        decorate(note, today, user["timezone"])
         note["deadlineLabel"] = ("Due " + inSentence(dayLabel(note["deadline"], today))) if note.get("deadline") else "Marked urgent"
         note["detail"] = describeUrgent(note, today)
         urgent.append(note)
@@ -277,8 +279,8 @@ def getTodayView(user):
         "todayLabel": f"{today.strftime('%A')}, {today.day} {today.strftime('%B')}",
         "subtitle": subtitle,
         "urgent": urgent,
-        "rollover": [decorate(n, today) for n in getRolloverNotes(userId, today)],
-        "todayNotes": [decorate(n, today) for n in getNotesForDay(userId, today.isoformat())],
+        "rollover": [decorate(n, today, user["timezone"]) for n in getRolloverNotes(userId, today)],
+        "todayNotes": [decorate(n, today, user["timezone"]) for n in getNotesForDay(userId, today.isoformat())],
         "upcoming": upcoming,
     }
 
@@ -355,3 +357,41 @@ def getBucketNotes(userId, timezoneName):
 
     doneItems.sort(key=lambda n: n.get("completed_at") or datetime.min, reverse=True)
     return {"sections": sections, "done": doneItems}
+
+
+
+# ---------------------------------------------------------------------------
+# Reminders (Stage 8): turning "Remind me" into a real moment in time
+# ---------------------------------------------------------------------------
+
+# A <input type="datetime-local"> value ("2026-10-05T09:00") in the person's own timezone
+# -> a real UTC datetime for the reminders job to compare against. Empty or bad input -> None.
+def cleanReminder(value, timezoneName):
+    try:
+        naive = datetime.strptime((value or "").strip(), "%Y-%m-%dT%H:%M")
+    except ValueError:
+        return None
+    return naive.replace(tzinfo=getZone(timezoneName)).astimezone(timezone.utc)
+
+
+# MongoDB reads back a naive datetime (UTC, by our own convention) even though we saved an
+# aware one, so a plain != would always look like a "change" and needlessly reset reminder_sent.
+# This compares two reminder_at values (aware, naive, or None) as the same moment in time.
+def sameInstant(a, b):
+    def normalise(value):
+        if value is None:
+            return None
+        if value.tzinfo is not None:
+            value = value.astimezone(timezone.utc).replace(tzinfo=None)
+        return value.replace(microsecond=0)
+    return normalise(a) == normalise(b)
+
+
+# The reverse: a stored UTC reminder_at -> the string a datetime-local input expects,
+# in the person's own timezone (so editing a note shows the time they actually picked)
+def reminderLocalValue(reminderAt, timezoneName):
+    if not reminderAt:
+        return ""
+    if reminderAt.tzinfo is None:
+        reminderAt = reminderAt.replace(tzinfo=timezone.utc)
+    return reminderAt.astimezone(getZone(timezoneName)).strftime("%Y-%m-%dT%H:%M")
