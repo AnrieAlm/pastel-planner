@@ -1,6 +1,7 @@
 # Calyx Planner - main.py: all the routes (web addresses) of the app.
 # Pages are drawn by Jinja2 templates; every route checks the login first.
 
+import os
 import time
 from uuid import uuid4
 from contextlib import asynccontextmanager
@@ -19,15 +20,15 @@ from calendar_helpers import (buildGoogleCalendarLink, buildHabitIcs, buildIcs, 
                               habitCalendarLink, safeFileName)
 from bucket_helpers import (addBucketItem, deleteBucketItem, getBucketItems, moveBucketNotesToWishList,
                             planBucketItem, restoreBucketItem, toggleBucketDone, updateBucketItem)
-from db import createIndexes, notes, users
+from db import createIndexes, devices, notes, users
 from icons import ICONS, makeIcon
 from grocery_helpers import (addItems, clearChecked, getGroceryItems, removeItems, restoreBatch,
                              setChecked)
 from habits_helpers import (NAME_MAX, SLOT_LIMIT, cleanDays, getHabitState, getHabitsForToday,
                             getHabitsView, setHabitLog)
 from notes_helpers import (FILTERS, CONTENT_MAX, TITLE_MAX, cleanColor, cleanDate, cleanFinishBy,
-                           cleanText, cleanTime, getNotes, getToday, getTodayView, resolveWhen,
-                           toObjectId)
+                           cleanReminder, cleanText, cleanTime, getNotes, getToday, getTodayView,
+                           reminderLocalValue, resolveWhen, sameInstant, toObjectId)
 
 
 # Runs once when the server starts: makes sure the database indexes exist
@@ -241,39 +242,43 @@ def apiMe(request: Request):
 # ---------- notes with THIS user's user_id, then redirects back with status 302.
 
 # Add a note (from the "New note" sheet)
-@app.post("/add-note")
-def addNote(request: Request, title: str = Form(""), content: str = Form(""),
-            color: str = Form("1"), urgent: str = Form(""), date: str = Form(""),
-            time: str = Form(""), deadline: str = Form(""), finishBy: str = Form("", alias="finish_by"),
-            when: str = Form(""), nextUrl: str = Form("/notes", alias="next")):
+# Save changes to a note (from the "Edit note" sheet)
+@app.post("/update-note/{noteId}")
+def updateNote(noteId: str, request: Request, title: str = Form(""), content: str = Form(""),
+               color: str = Form("1"), urgent: str = Form(""), date: str = Form(""),
+               time: str = Form(""), deadline: str = Form(""), finishBy: str = Form("", alias="finish_by"),
+               remind: str = Form(""), nextUrl: str = Form("/notes", alias="next")):
     user, redirect = getUserOrRedirect(request)
     if redirect:
         return redirect
 
-    cleanTitle = cleanText(title, TITLE_MAX)
-    if cleanTitle:
-        # The capture box sends "today" or a weekday name instead of an exact date;
-        # we turn it into a date using the person's own timezone
-        noteDate = cleanDate(date) or resolveWhen(when, getToday(user["timezone"]))
-        noteDeadline = cleanDate(deadline)
-        notes.insert_one({
-            "user_id": user["user_id"],
-            "title": cleanTitle,
-            "content": cleanText(content, CONTENT_MAX),
-            "color": cleanColor(color),
-            "created_at": datetime.now(timezone.utc),
-            "date": noteDate,
-            "time": cleanTime(time) if noteDate else None,
-            "deadline": noteDeadline,
-            "finish_by": cleanFinishBy(finishBy, noteDeadline),
-            "urgent": urgent == "on",
-            "reminder_at": None,
-            "reminder_sent": False,
-            "done": False,
-            "completed_at": None,
-            "dismissed": False,
-            "deleted_at": None,
-        })
+    objectId = toObjectId(noteId)
+    if objectId is not None:
+        existing = notes.find_one({"_id": objectId, "user_id": user["user_id"], "deleted_at": None})
+        if existing:
+            noteDate = cleanDate(date)
+            noteDeadline = cleanDate(deadline)
+            newReminder = cleanReminder(remind, user["timezone"])
+            changes = {
+                "content": cleanText(content, CONTENT_MAX),
+                "color": cleanColor(color),
+                "urgent": urgent == "on",
+                "date": noteDate,
+                "time": cleanTime(time) if noteDate else None,
+                "deadline": noteDeadline,
+                "finish_by": cleanFinishBy(finishBy, noteDeadline),
+                "reminder_at": newReminder,
+            }
+            # Only reset reminder_sent when the reminder time actually changed — editing
+            # something else about an already-reminded note should not send it again
+            if not sameInstant(newReminder, existing.get("reminder_at")):
+                changes["reminder_sent"] = False
+            # An empty title is ignored, so a note never ends up with no name
+            cleanTitle = cleanText(title, TITLE_MAX)
+            if cleanTitle:
+                changes["title"] = cleanTitle
+            notes.update_one({"_id": objectId, "user_id": user["user_id"], "deleted_at": None},
+                             {"$set": changes})
     return RedirectResponse(safeNext(nextUrl), status_code=302)
 
 
