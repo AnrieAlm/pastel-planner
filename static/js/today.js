@@ -23,10 +23,9 @@ const Today = {
     this.initRoutineTimeline();
   },
 
-
-    // Morning routine: moves the "Now" highlight and its countdown with the real clock, instead of
-  // the fixed "Now / 8 min left" the sample data used to show. (The blocks themselves are still
-  // sample data — a real, editable routine arrives in a later stage.)
+  // Routine: moves the "Now" highlight and its countdown with the real clock, across however
+  // many blocks today actually has (merged from every routine active today). Also wires each
+  // block's tick button, which also ticks its linked habit (see /api/routines/.../toggle).
   initRoutineTimeline() {
     const container = document.getElementById('morning-routine');
     const blocks = [...(container?.querySelectorAll('.timeline-block[data-time]') || [])];
@@ -39,7 +38,6 @@ const Today = {
     const schedule = blocks.map(el => ({
       el,
       start: toMinutes(el.dataset.time),
-      isFinal: el.dataset.final === 'true',
       originalTime: el.querySelector('.timeline-time').textContent,
     }));
 
@@ -49,9 +47,9 @@ const Today = {
 
       schedule.forEach((block, i) => {
         const next = schedule[i + 1];
-        // A point-in-time block (the last one, "depart") stays "active" for 10 minutes rather
-        // than having a real duration
-        const end = next ? next.start : block.start + 10;
+        // The last block of the day has no "next" to end at, so it stays "active" for 15
+        // minutes rather than having a real duration to compare against
+        const end = next ? next.start : block.start + 15;
         const isActive = nowMinutes >= block.start && nowMinutes < end;
         const isDone = nowMinutes >= end;
 
@@ -63,7 +61,7 @@ const Today = {
           const minutesLeft = end - nowMinutes;
           timeEl.textContent = 'Now';
           block.el.querySelector('.timeline-countdown')?.remove();
-          if (!block.isFinal && minutesLeft > 0) {
+          if (minutesLeft > 0 && i < schedule.length - 1) {
             const countdown = document.createElement('span');
             countdown.className = 'timeline-countdown';
             countdown.textContent = `· ${minutesLeft} min left`;
@@ -82,7 +80,48 @@ const Today = {
     // Phones pause timers while a tab is hidden; catch up the moment it's visible again
     document.addEventListener('visibilitychange', () => { if (!document.hidden) update(); });
     window.addEventListener('pagehide', () => clearInterval(timer));
+
+    this.initRoutineTicks(container);
   },
+
+  // Ticking a routine block saves instantly and, if it has a linked habit, ticks that habit
+  // too — its chip and streak words (elsewhere on this same page) update right along with it.
+  initRoutineTicks(container) {
+    container?.addEventListener('click', async (e) => {
+      const button = e.target.closest('.timeline-tick');
+      if (!button) return;
+      const block = button.closest('.timeline-block');
+      const willBeDone = button.getAttribute('aria-pressed') !== 'true';
+
+      button.setAttribute('aria-pressed', String(willBeDone));
+      block.classList.toggle('ticked', willBeDone);
+
+      const todayIso = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in the browser's own timezone
+      try {
+        const response = await fetch(
+          `/api/routines/${encodeURIComponent(block.dataset.routineId)}/blocks/${encodeURIComponent(block.dataset.blockId)}/toggle`,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) }
+        );
+        if (response.status === 401) { window.location.href = '/login'; return; }
+        if (!response.ok) throw new Error('save failed');
+        const result = await response.json();
+
+        // If this block is linked to a habit, its chip (and streak words) live elsewhere on
+        // Today — Habits.showTick/showStreak already know how to update any element for that
+        // habit_id, so this just hands them the id and the new state rather than keeping its
+        // own copy of that logic
+        if (result.habitId && result.habit && typeof Habits !== 'undefined') {
+          Habits.showTick(result.habitId, todayIso, result.habit.doneToday);
+          Habits.showStreak(result.habitId, result.habit.streakText);
+        }
+      } catch (error) {
+        button.setAttribute('aria-pressed', String(!willBeDone));
+        block.classList.toggle('ticked', !willBeDone);
+        this.toast('Couldn\u2019t save that. Please try again.');
+      }
+    });
+  },
+
   // After the capture form sends, the server redirects to /?added=1. Say so once.
   showAddedToastIfNeeded() {
     const params = new URLSearchParams(window.location.search);
@@ -268,7 +307,6 @@ const Today = {
 
       const form = document.getElementById('rollover-form');
       if (!form) return;
-      // setAttribute, because this form has an input called "action" that hides form.action
       form.setAttribute('action', '/rollover/' + sourceEl.dataset.noteId);
       form.querySelector('[name="new_date"]').value = date;
       form.submit();
