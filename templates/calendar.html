@@ -14,9 +14,9 @@
     </div>
 
     <div class="calendar-month-nav">
-      <a class="calendar-nav-link" href="/calendar?month={{ cal.prevMonth }}" aria-label="Previous month">←</a>
+      <a class="calendar-nav-link" href="/calendar?month={{ cal.prevMonth }}" aria-label="Previous month"><span class="nav-icon" data-nav-icon="chevron-left"></span></a>
       <h3>{{ cal.title }}</h3>
-      <a class="calendar-nav-link" href="/calendar?month={{ cal.nextMonth }}" aria-label="Next month">→</a>
+      <a class="calendar-nav-link" href="/calendar?month={{ cal.nextMonth }}" aria-label="Next month"><span class="nav-icon" data-nav-icon="chevron-right"></span></a>
       {% if not cal.isCurrentMonth %}<a class="calendar-today-link" href="/calendar">Back to today</a>{% endif %}
     </div>
 

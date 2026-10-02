@@ -276,6 +276,10 @@
   text-decoration: none;
   transition: background 0.15s ease, color 0.15s ease;
 }
+.calendar-nav-link svg {
+  width: 18px;
+  height: 18px;
+}
 .calendar-nav a.calendar-nav-link:hover {
   background: var(--calendar-mark-tint);
   color: var(--text-primary);

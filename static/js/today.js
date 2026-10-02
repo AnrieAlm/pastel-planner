@@ -29,21 +29,31 @@ const Today = {
       originalTime: el.querySelector('.timeline-time').textContent,
     }));
 
-    const heading = container.querySelector('h3');
+    const headingIcon = container.querySelector('.routine-heading-icon');
+    const headingLabel = container.querySelector('.routine-heading-label');
 
-    // The heading's icon and words shift with the time of day, so a dark evening doesn't
-    // still say "Today's routine" under a sun. Adjust the hours here if these feel off.
+    // The heading's icon and words shift with the time of day, so a dark evening doesn't still
+    // say "Today's routine" under a sun. Adjust the hours here if these feel off. The icon markup
+    // comes straight from NavIcons.map, the same SVGs used everywhere else — never a raw emoji
+    // character, so this can never put an un-styled icon back into the page.
     const headingFor = (hour) => {
-      if (hour >= 20 || hour < 5) return '\u{1F319} Tonight\u2019s routine';
-      if (hour >= 17) return '\u{1F307} This evening';
-      return '\u2600\uFE0F Today\u2019s routine';
+      if (hour >= 20 || hour < 5) return { icon: 'moon', label: 'Tonight\u2019s routine' };
+      if (hour >= 17) return { icon: 'sunset', label: 'This evening' };
+      return { icon: 'sun', label: 'Today\u2019s routine' };
     };
 
     const update = () => {
       const now = new Date();
       const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
-      if (heading) heading.textContent = headingFor(now.getHours());
+      if (headingIcon && headingLabel) {
+        const { icon, label } = headingFor(now.getHours());
+        if (headingIcon.dataset.shown !== icon) {
+          headingIcon.innerHTML = NavIcons.map[icon] || '';
+          headingIcon.dataset.shown = icon;
+        }
+        headingLabel.textContent = label;
+      }
 
       schedule.forEach((block, i) => {
         
@@ -617,9 +627,11 @@ const Today = {
     const mentionedDay = days.find(d => lower.includes(d));
     if (dateChip) {
       dateChip.dataset.when = mentionedDay || 'today';
-      dateChip.textContent = mentionedDay
-        ? `📅 ${mentionedDay.charAt(0).toUpperCase() + mentionedDay.slice(1)}`
-        : '📅 Today';
+      // Only the label text is touched — the calendar icon next to it is fixed markup from the
+      // template, so this can never write a raw emoji into the page the way plain textContent on
+      // the whole button would.
+      const label = dateChip.querySelector('.chip-label');
+      if (label) label.textContent = mentionedDay ? mentionedDay.charAt(0).toUpperCase() + mentionedDay.slice(1) : 'Today';
     }
   },
 

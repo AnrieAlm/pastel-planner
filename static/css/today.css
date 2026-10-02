@@ -130,6 +130,16 @@
   margin-bottom: var(--sp-sm);
   color: var(--text-primary);
 }
+.routine-heading-icon {
+  display: inline-flex;
+  vertical-align: -3px;
+  margin-right: 2px;
+}
+.routine-heading-icon svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
 
 .timeline-block {
   display: flex;

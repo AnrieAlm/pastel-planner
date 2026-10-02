@@ -35,6 +35,11 @@ const NavIcons = {
     'panel-collapse': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" stroke-width="1.5"/><path d="M9 4v16" stroke-width="1.5"/><path d="M14 9l-3 3 3 3" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round"/></svg>',
     play: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-width="1.5"/><path d="M10 8.5v7l5.5-3.5z" stroke-width="1.5" stroke-linejoin="round"/></svg>',
     stop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-width="1.5"/><rect x="9" y="9" width="6" height="6" rx="1" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+    sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="4" stroke-width="1.5"/><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" stroke-width="1.5" stroke-linecap="square"/></svg>',
+    sunset: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="13" r="3.5" stroke-width="1.5"/><path d="M3 19h18M12 3v4M5.5 8.5l1.8 1.8M18.5 8.5l-1.8 1.8" stroke-width="1.5" stroke-linecap="square"/></svg>',
+    moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+    'chevron-left': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round"/></svg>',
+    'chevron-right': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round"/></svg>',
     mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" stroke-width="1.5"/><path d="M5 11a7 7 0 0 0 14 0" stroke-width="1.5" stroke-linecap="square"/><path d="M12 18v3M9 21h6" stroke-width="1.5" stroke-linecap="square"/></svg>'
   },
 

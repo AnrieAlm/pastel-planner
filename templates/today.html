@@ -46,7 +46,7 @@
       <div class="capture-suggestions hidden" id="today-capture-suggestions" aria-live="polite">
         <p class="suggestions-label">Sinéad's guesses — tap to adjust, then confirm</p>
         <div class="suggestion-chips" role="group" aria-label="Adjust Sinéad's suggestions">
-          <button type="button" class="suggestion-chip selected" data-chip="date" data-when="today" aria-pressed="true">📅 Today</button>
+          <button type="button" class="suggestion-chip selected" data-chip="date" data-when="today" aria-pressed="true"><span class="nav-icon" data-nav-icon="calendar" aria-hidden="true"></span> <span class="chip-label">Today</span></button>
           <button type="button" class="suggestion-chip selected" data-chip="category" aria-pressed="true">🏷️ Note</button>
           <button type="button" class="suggestion-chip" data-chip="urgent" aria-pressed="false">⚑ Mark urgent</button>
         </div>
@@ -74,7 +74,7 @@
        "Now" moves with the real clock; ticking a block also ticks its linked habit. #}
     {% if routineBlocks %}
     <div class="morning-routine" id="morning-routine">
-      <h3>☀️ Today’s routine</h3>
+      <h3><span class="routine-heading-icon" aria-hidden="true"><span class="nav-icon" data-nav-icon="sun"></span></span> <span class="routine-heading-label">Today’s routine</span></h3>
 
       {% for block in routineBlocks %}
       <div class="timeline-block{% if block.block_id in doneBlockIds %} ticked{% endif %}"
