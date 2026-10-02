@@ -29,6 +29,7 @@ grocery = db["grocery"]
 bucket_items = db["bucket_items"]
 routines = db["routines"]            # named sets of time blocks (see routine_helpers.py)
 routine_logs = db["routine_logs"]    # which routine blocks were ticked on which day
+capture_sessions = db["capture_sessions"]   # Sinéad's unconfirmed drafts (they delete themselves)
 
 
 # Indexes make lookups fast and stop duplicates. Creating one that already exists does nothing.
@@ -41,3 +42,6 @@ def createIndexes():
     bucket_items.create_index([("user_id", 1), ("deleted_at", 1)])
     routines.create_index([("user_id", 1), ("deleted_at", 1)])
     routine_logs.create_index([("user_id", 1), ("date", 1)], unique=True)
+    capture_sessions.create_index([("user_id", 1), ("created_at", 1)])
+    # TTL index: MongoDB itself deletes each draft once its expires_at time has passed
+    capture_sessions.create_index("expires_at", expireAfterSeconds=0)

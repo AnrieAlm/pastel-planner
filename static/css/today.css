@@ -719,3 +719,97 @@ button.habit-chip.done .habit-chip-tick {
 .timeline-block.active .timeline-countdown {
   color: var(--accent-primary);
 }
+
+/* ---------- Sinéad's review card (the AI's draft, shown before anything is saved) ---------- */
+.capture-review {
+  margin-top: var(--sp-md);
+  padding: var(--sp-md);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+}
+.capture-review h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  color: var(--text-primary);
+}
+.capture-review h3:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.capture-review-intro {
+  margin: var(--sp-xs) 0 var(--sp-md);
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+.capture-review-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-sm); }
+.capture-review-item {
+  display: flex;
+  gap: var(--sp-sm);
+  padding: var(--sp-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+}
+.capture-review-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.capture-review-check input { width: 22px; height: 22px; accent-color: var(--accent-primary); cursor: pointer; }
+.capture-review-fields { flex: 1; min-width: 0; display: grid; gap: var(--sp-sm); }
+.capture-review-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-sm); }
+.capture-review-note-only { display: contents; }
+.capture-review-note-only[hidden],
+.capture-review select[hidden] { display: none; }
+.capture-review input[type="text"],
+.capture-review input[type="date"],
+.capture-review input[type="time"],
+.capture-review select {
+  min-height: 44px;
+  padding: 0 var(--sp-sm);
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  color: var(--text-primary);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+.capture-review input[type="text"] { width: 100%; font-weight: 600; }
+.capture-review input:focus-visible,
+.capture-review select:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.capture-review-urgent {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-height: 44px;
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+}
+.capture-review-urgent input { width: 20px; height: 20px; accent-color: var(--accent-secondary); }
+.capture-review-hint { font-size: var(--fs-xs); color: var(--text-secondary); }
+.capture-review-actions { display: flex; flex-wrap: wrap; gap: var(--sp-sm); margin-top: var(--sp-md); }
+.capture-review .btn-capture-confirm:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+.capture-review .btn-capture-confirm:focus-visible,
+.btn-capture-cancel:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.btn-capture-cancel {
+  min-height: 44px;
+  padding: 0 var(--sp-lg);
+  background: transparent;
+  color: var(--text-primary);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+}
+.btn-capture-cancel:hover { background: var(--bg-card); }
+.btn-capture-submit[aria-busy="true"] { cursor: progress; }
+@media (max-width: 600px) {
+  .capture-review-actions .btn-capture-confirm,
+  .capture-review-actions .btn-capture-cancel { width: 100%; }
+}
+
+/* Voice capture: waiting and keyboard states for the mic button */
+.capture-mic-btn:disabled { opacity: 0.55; cursor: progress; animation: none; }
+.capture-mic-btn:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }

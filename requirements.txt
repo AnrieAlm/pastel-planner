@@ -9,3 +9,4 @@ cachecontrol
 tzdata
 pillow
 firebase-admin
+groq

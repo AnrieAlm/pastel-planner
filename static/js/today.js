@@ -145,9 +145,8 @@ const Today = {
     this.toast('Added to your day');
   },
 
-  // Day capture: type or speak, tap "Sort my day", adjust the chips, then confirm.
-  // Confirming fills a small hidden form and sends it to the server, which saves a real note.
-  // (Sinéad's AI guesses arrive in a later stage; the chips here are a light keyword guess.)
+  // Day capture: type, tap "Sort my day", check Sinéad's review card, then confirm. Nothing is
+  // saved until you confirm. (The chips are the simple fallback when Sinéad can't be reached.)
   initCapture() {
     const input = document.getElementById('today-capture-input');
     const micBtn = document.getElementById('today-capture-mic');
@@ -180,36 +179,44 @@ const Today = {
       }
     });
 
-    // Voice capture isn't connected to anything real yet, but a real
-    // start/stop toggle (with a visible "recording" pulse) is still a
-    // more honest preview of the intended interaction than a one-shot
-    // message — auto-stops after 4s either way so it can't get stuck on
-    micBtn?.addEventListener('click', () => {
-      const recording = micBtn.classList.toggle('recording');
-      micBtn.setAttribute('aria-pressed', String(recording));
-      clearTimeout(this._micTimer);
+    // Voice: the mic records, the server turns it into text, and the text lands in the box
+    this.initMic(micBtn, micStatus, input);
 
-      if (!recording) {
-        micStatus?.classList.add('hidden');
-        return;
-      }
-      if (micStatus) {
-        micStatus.textContent = 'Listening… (voice input isn\u2019t connected yet — this is a preview)';
-        micStatus.classList.remove('hidden');
-      }
-      this._micTimer = setTimeout(() => {
-        micBtn.classList.remove('recording');
-        micBtn.setAttribute('aria-pressed', 'false');
-        micStatus?.classList.add('hidden');
-      }, 4000);
-    });
+    // The review card is shown (and handled) inside this slot
+    const slot = document.getElementById('capture-review-slot');
+    if (slot) this.initReviewCard(slot, input);
 
-    submitBtn.addEventListener('click', () => {
+    // "Sort my day": Sinéad (the server) sorts the text into a review card. If she can't (no
+    // internet, no AI key, too many tries) we quietly use the simple chips below instead, so
+    // saving a note always still works.
+    submitBtn.addEventListener('click', async () => {
       const text = input.value.trim();
       if (!text) return;
-      this.guessCaptureChips(text);
-      suggestions?.classList.remove('hidden');
-      suggestions?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      suggestions?.classList.add('hidden');
+      if (slot) slot.innerHTML = '';
+      const label = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sorting\u2026';
+      submitBtn.setAttribute('aria-busy', 'true');
+
+      const html = slot ? await this.fetchReviewCard(text) : null;
+
+      submitBtn.textContent = label;
+      submitBtn.removeAttribute('aria-busy');
+      syncSubmitState();
+
+      if (html) {
+        slot.innerHTML = html;
+        const card = slot.querySelector('.capture-review');
+        this.syncReviewCount(card);
+        card.querySelector('#capture-review-title')?.focus();
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } else {
+        this.guessCaptureChips(text);
+        suggestions?.classList.remove('hidden');
+        suggestions?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     });
 
     document.querySelectorAll('.suggestion-chip').forEach(chip => {
@@ -242,6 +249,267 @@ const Today = {
       confirmBtn.disabled = true;
       form.submit();
     });
+  },
+
+  // ----- Voice capture. Tap the mic, speak, tap again. The recording goes to the server (which
+  // asks Groq's Whisper to write it down) and the words appear in the box for you to check.
+  // The recording is never saved: it is only held in memory while it is sent.
+  MIC_MAX_MS: 120000,          // recording stops by itself after 2 minutes
+
+  initMic(micBtn, micStatus, input) {
+    if (!micBtn) return;
+    // Old browsers (or a page that is not https) can't record, so the mic is simply hidden
+    const canRecord = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+    if (!canRecord) {
+      micBtn.hidden = true;
+      micBtn.style.display = 'none';
+      return;
+    }
+    this._micParts = { micBtn, micStatus, input };
+
+    micBtn.addEventListener('click', () => {
+      if (this._mic && this._mic.busy) return;           // still writing the last one down
+      if (this._mic) this.stopRecording();
+      else this.startRecording();
+    });
+    // Leaving the page must switch the microphone off
+    window.addEventListener('pagehide', () => this.releaseMic());
+  },
+
+  // Says something under the mic button (it fades away by itself unless we are still recording)
+  micMessage(text, keep) {
+    const status = this._micParts?.micStatus;
+    if (!status) return;
+    clearTimeout(this._micHideTimer);
+    status.textContent = text;
+    status.classList.remove('hidden');
+    if (!keep) this._micHideTimer = setTimeout(() => status.classList.add('hidden'), 9000);
+  },
+
+  // The best recording format this browser knows (Chrome: webm, Safari/iPhone: mp4)
+  pickAudioType() {
+    const options = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+    if (typeof MediaRecorder.isTypeSupported !== 'function') return '';
+    return options.find(type => MediaRecorder.isTypeSupported(type)) || '';
+  },
+
+  async startRecording() {
+    const { micBtn } = this._micParts;
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (error) {
+      this.micMessage(error && error.name === 'NotAllowedError'
+        ? 'The microphone is switched off for this site. You can allow it in your browser\u2019s site settings.'
+        : 'I couldn\u2019t find a microphone. You can type instead.');
+      return;
+    }
+
+    const type = this.pickAudioType();
+    const recorder = type ? new MediaRecorder(stream, { mimeType: type }) : new MediaRecorder(stream);
+    const chunks = [];
+    recorder.addEventListener('dataavailable', (e) => { if (e.data && e.data.size) chunks.push(e.data); });
+    recorder.addEventListener('stop', () => this.finishRecording(chunks, recorder.mimeType || type));
+
+    this._mic = {
+      stream, recorder, busy: false, startedAt: Date.now(),
+      timer: setTimeout(() => this.stopRecording(), this.MIC_MAX_MS)
+    };
+    recorder.start();
+    micBtn.classList.add('recording');
+    micBtn.setAttribute('aria-pressed', 'true');
+    micBtn.setAttribute('aria-label', 'Stop recording');
+    this.micMessage('Listening\u2026 tap the mic again when you\u2019re done.', true);
+  },
+
+  stopRecording() {
+    const recorder = this._mic && this._mic.recorder;
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+  },
+
+  // Switches the microphone off completely (so the browser's recording dot goes away)
+  releaseMic() {
+    if (!this._mic) return;
+    clearTimeout(this._mic.timer);
+    this._mic.stream.getTracks().forEach(track => track.stop());
+    const recorder = this._mic.recorder;
+    if (recorder && recorder.state !== 'inactive') {
+      // Leaving the page: drop the recording instead of sending it
+      this._mic.cancelled = true;
+      recorder.stop();
+    }
+  },
+
+  async finishRecording(chunks, mimeType) {
+    const mic = this._mic;
+    const { micBtn, input } = this._micParts;
+    if (!mic) return;
+    const seconds = (Date.now() - mic.startedAt) / 1000;
+    this.releaseMic();
+    micBtn.classList.remove('recording');
+    micBtn.setAttribute('aria-pressed', 'false');
+    micBtn.setAttribute('aria-label', 'Speak instead of typing');
+    if (mic.cancelled) { this._mic = null; return; }
+
+    const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
+    if (seconds < 1 || blob.size < 1500) {                // a mis-tap, nothing to send
+      this._mic = null;
+      this.micMessage('I didn\u2019t catch anything. Tap the mic and try again.');
+      return;
+    }
+
+    mic.busy = true;
+    micBtn.disabled = true;
+    this.micMessage('Writing that down\u2026', true);
+    try {
+      const extension = ['webm', 'mp4', 'ogg', 'wav'].find(e => (mimeType || '').includes(e)) || 'webm';
+      const form = new FormData();
+      form.append('audio', blob, 'capture.' + extension);
+      const response = await fetch('/api/capture/transcribe', { method: 'POST', body: form });
+
+      if (response.status === 401) { window.location.href = '/login'; return; }
+      if (response.status === 413) {
+        this.micMessage('That was a long one. Try recording it in shorter parts.');
+        return;
+      }
+      if (response.status === 429) {
+        this.micMessage('That\u2019s a lot of voice for one hour. Typing still works.');
+        return;
+      }
+      if (!response.ok) throw new Error('transcribe failed');
+
+      const { text } = await response.json();
+      if (!text) {
+        this.micMessage('I didn\u2019t catch anything. Tap the mic and try again.');
+        return;
+      }
+      // Add the words to the box (below anything already typed) and wake up the box's other helpers
+      const existing = input.value.trim();
+      input.value = existing ? existing + '\n' + text : text;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.focus();
+      this.micMessage('Check the words, then tap Sort my day.');
+    } catch (error) {
+      this.micMessage('I couldn\u2019t write that down just now. You can type it instead.');
+    } finally {
+      this._mic = null;
+      micBtn.disabled = false;
+    }
+  },
+
+  // Asks the server to sort the text. Returns the review card's HTML, or null when it can't
+  // (the caller then shows the simple chips). A 401 sends you to the login page.
+  async fetchReviewCard(text) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30000);
+    try {
+      const response = await fetch('/api/capture/parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+        signal: controller.signal
+      });
+      if (response.status === 401) {
+        window.location.href = '/login';
+        return null;
+      }
+      if (response.status === 429) {
+        this.toast('That\u2019s a lot of sorting for one hour. Here\u2019s the simple version.');
+        return null;
+      }
+      if (!response.ok) throw new Error('parse failed');
+      return await response.text();
+    } catch (error) {
+      this.toast('Sinéad is resting, so here\u2019s the simple version.');
+      return null;
+    } finally {
+      clearTimeout(timer);
+    }
+  },
+
+  // Listens (once) for changes and taps anywhere inside the review card
+  initReviewCard(slot) {
+    slot.addEventListener('change', (e) => {
+      const card = e.target.closest('.capture-review');
+      if (!card) return;
+      // Date, time and Urgent only make sense for notes
+      if (e.target.matches('.cr-target')) {
+        const row = e.target.closest('.capture-review-row');
+        const noteOnly = row.querySelector('.capture-review-note-only');
+        if (noteOnly) noteOnly.hidden = e.target.value !== 'note';
+        const category = row.querySelector('.cr-category');
+        if (category) category.hidden = e.target.value !== 'bucket';
+      }
+      this.syncReviewCount(card);
+    });
+
+    slot.addEventListener('click', (e) => {
+      const card = e.target.closest('.capture-review');
+      if (!card) return;
+      if (e.target.closest('.cr-cancel')) {
+        slot.innerHTML = '';
+        document.getElementById('today-capture-input')?.focus();
+        return;
+      }
+      const confirmBtn = e.target.closest('.cr-confirm');
+      if (confirmBtn) this.confirmReview(card, confirmBtn);
+    });
+  },
+
+  // The confirm button says how many things are ticked, and is off when none are
+  syncReviewCount(card) {
+    const button = card?.querySelector('.cr-confirm');
+    if (!button) return;
+    const count = card.querySelectorAll('.cr-include:checked').length;
+    button.disabled = count === 0;
+    button.textContent = count === 0 ? 'Tick something to add' : `Add ${count} to my day`;
+  },
+
+  // Sends the ticked items (with any edits) to the server, which cleans them again and saves them
+  async confirmReview(card, button) {
+    const picks = [...card.querySelectorAll('.capture-review-item')]
+      .filter(row => row.querySelector('.cr-include').checked)
+      .map(row => {
+        const target = row.querySelector('.cr-target').value;
+        const pick = { index: Number(row.dataset.index), title: row.querySelector('.cr-title').value, target };
+        if (target === 'bucket') pick.category = row.querySelector('.cr-category').value;
+        if (target === 'note') {
+          pick.date = row.querySelector('.cr-date').value;
+          pick.time = row.querySelector('.cr-time').value;
+          pick.urgent = row.querySelector('.cr-urgent').checked;
+        }
+        return pick;
+      });
+    if (!picks.length) return;
+
+    button.disabled = true;
+    button.textContent = 'Adding\u2026';
+    try {
+      const response = await fetch('/api/capture/confirm/' + encodeURIComponent(card.dataset.sessionId), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ picks })
+      });
+      if (response.status === 401) {
+        window.location.href = '/login';
+        return;
+      }
+      if (response.status === 409) {                    // a double tap: it was already saved
+        window.location.href = '/?added=1';
+        return;
+      }
+      if (response.status === 404) {                    // the draft timed out (30 minutes)
+        const reviewSlot = document.getElementById('capture-review-slot');
+        if (reviewSlot) reviewSlot.innerHTML = '';
+        this.toast('That took a little long, so nothing was added. Tap Sort my day to try again.');
+        return;
+      }
+      if (!response.ok) throw new Error('confirm failed');
+      window.location.href = '/?added=1';
+    } catch (error) {
+      this.syncReviewCount(card);
+      this.toast('Couldn\u2019t save that. Please try again.');
+    }
   },
 
   // Light keyword guesses to make the mock suggestions feel at least

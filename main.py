@@ -8,13 +8,15 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qsl, urlencode, urlsplit
 
-from fastapi import FastAPI, Form, Request
+from fastapi import FastAPI, File, Form, Request, UploadFile
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from fastapi.templating import Jinja2Templates
 
+from ai import (AUDIO_MAX_BYTES, AUDIO_MIN_BYTES, TEXT_MAX, AiUnavailable, RateLimited, confirmDraft,
+                parseDump, transcribeAudio)
 from account_helpers import (cleanTimezone, deleteAccountData, exportAllData, getTimezoneChoices,
                              updateProfile)
 from auth import checkRequest
@@ -839,6 +841,85 @@ def apiGroceryRestore(body: GroceryRestoreBody, request: Request):
     if not count:
         return JSONResponse({"error": "nothing to undo"}, status_code=404)
     return {"ok": True, "count": count}
+
+
+# ---------- Sinéad (AI): sort a typed brain-dump into a DRAFT, then save only what is confirmed.
+# ---------- The AI only suggests; these routes never save anything until /confirm is called.
+
+# JSON: turns a voice recording into text. The browser sends the audio as a file called "audio";
+# the text goes back into the capture box so you can fix any misheard words before sorting.
+# Answers: 401 not logged in, 413 too big, 415 not audio, 429 too many, 503 AI not set up, 502 AI failed.
+# (A plain "def", not "async def", because the call to Groq waits for an answer.)
+@app.post("/api/capture/transcribe")
+def apiCaptureTranscribe(request: Request, audio: UploadFile = File(...)):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+
+    contentType = (audio.content_type or "").lower()
+    if not contentType.startswith(("audio/", "video/")):
+        return JSONResponse({"error": "that is not audio"}, status_code=415)
+
+    data = audio.file.read(AUDIO_MAX_BYTES + 1)         # read one byte past the limit to detect "too big"
+    if len(data) > AUDIO_MAX_BYTES:
+        return JSONResponse({"error": "recording too long"}, status_code=413)
+    if len(data) < AUDIO_MIN_BYTES:
+        return {"text": ""}                              # nothing was really recorded
+
+    try:
+        text = transcribeAudio(user, data, contentType)
+    except RateLimited:
+        return JSONResponse({"error": "too many in an hour"}, status_code=429)
+    except AiUnavailable:
+        return JSONResponse({"error": "voice is not set up"}, status_code=503)
+    except Exception as error:
+        print("Sinéad could not transcribe a recording:", error)
+        return JSONResponse({"error": "could not transcribe"}, status_code=502)
+    return {"text": text}
+
+
+class CaptureBody(BaseModel):
+    text: str = ""
+
+
+# JSON: sorts the text and answers with the review card (HTML, drawn by Jinja2 so every word the
+# person typed is safely escaped). Answers 401 if not logged in, 429 if asked too often.
+@app.post("/api/capture/parse")
+def apiCaptureParse(body: CaptureBody, request: Request):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+
+    text = cleanText(body.text, TEXT_MAX)
+    if not text:
+        return JSONResponse({"error": "nothing to sort"}, status_code=400)
+    try:
+        draft = parseDump(user, text)
+    except RateLimited:
+        return JSONResponse({"error": "too many in an hour"}, status_code=429)
+
+    html = templates.get_template("partials/_capture_review.html").render(draft=draft)
+    return HTMLResponse(html)
+
+
+# What the review card sends back: which items were ticked, with any edits
+class CaptureConfirmBody(BaseModel):
+    picks: list[dict] = []
+
+
+# JSON: saves the ticked items. 404 = the draft timed out, 409 = it was already saved.
+@app.post("/api/capture/confirm/{sessionId}")
+def apiCaptureConfirm(sessionId: str, body: CaptureConfirmBody, request: Request):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+
+    outcome, counts = confirmDraft(user, sessionId, body.picks)
+    if outcome == "already":
+        return JSONResponse({"error": "already saved"}, status_code=409)
+    if outcome != "ok":
+        return JSONResponse({"error": "not found"}, status_code=404)
+    return {"ok": True, "committed": counts}
 
 
 # ---------- Push notifications (Stage 8). The live app only stores WHICH devices should get a

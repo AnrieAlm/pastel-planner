@@ -1,0 +1,62 @@
+{# Sinéad's review card. Drawn on the server (so everything typed is escaped by Jinja2) and dropped
+   into #capture-review-slot on the Today page. Nothing here is saved until "Add to my day". #}
+{% set count = draft['items'] | length %}
+<section class="capture-review" data-session-id="{{ draft['session_id'] }}" aria-labelledby="capture-review-title">
+  <h3 id="capture-review-title" tabindex="-1">
+    {% if draft['used_ai'] %}Sinéad found {{ count }} thing{{ '' if count == 1 else 's' }}{% else %}Ready to add{% endif %}
+  </h3>
+  <p class="capture-review-intro">
+    {% if draft['used_ai'] %}Tick what you'd like added, and change anything that isn't quite right.
+    {% else %}{{ draft['notice'] }} You can still change it before it's added.{% endif %}
+  </p>
+
+  <ul class="capture-review-list">
+    {% for item in draft['items'] %}
+    <li class="capture-review-item" data-index="{{ loop.index0 }}">
+      <label class="capture-review-check">
+        <input type="checkbox" class="cr-include"{% if not item['duplicate'] %} checked{% endif %}
+               aria-label="Add: {{ item['title'] }}" />
+      </label>
+
+      <div class="capture-review-fields">
+        <input type="text" class="cr-title" value="{{ item['title'] }}" maxlength="200" aria-label="Title" />
+
+        <div class="capture-review-row">
+          <select class="cr-target" aria-label="Where it goes">
+            <option value="note"{% if item['target'] == 'note' %} selected{% endif %}>Note</option>
+            <option value="grocery"{% if item['target'] == 'grocery' %} selected{% endif %}>Grocery list</option>
+            <option value="bucket"{% if item['target'] == 'bucket' %} selected{% endif %}>Bucket list</option>
+          </select>
+
+          {# Which Bucket List tab it joins - only shown when the item goes to the Bucket list #}
+          <select class="cr-category" aria-label="Bucket list section"{% if item['target'] != 'bucket' %} hidden{% endif %}>
+            {% for value, label in [('places', 'Places'), ('experiences', 'Experiences'), ('things', 'Things'), ('movies', 'Movies')] %}
+            <option value="{{ value }}"{% if (item['category'] or 'things') == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+
+          {# Date, time and urgent only apply to notes. Notes with no day mentioned start on today. #}
+          <span class="capture-review-note-only"{% if item['target'] != 'note' %} hidden{% endif %}>
+            <input type="date" class="cr-date" value="{{ item['date'] or draft['today'] }}" aria-label="Date" />
+            <input type="time" class="cr-time" value="{{ item['time'] or '' }}" aria-label="Time (optional)" />
+            <label class="capture-review-urgent">
+              <input type="checkbox" class="cr-urgent"{% if item['urgent'] %} checked{% endif %} /> Urgent
+            </label>
+          </span>
+        </div>
+
+        {% if item['duplicate'] %}
+        <p class="capture-review-hint">Looks like you already have this, so it's unticked.</p>
+        {% elif draft['used_ai'] and item['confidence'] < 0.6 %}
+        <p class="capture-review-hint">Not sure about this one, so it's worth a quick look.</p>
+        {% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <div class="capture-review-actions">
+    <button type="button" class="btn-capture-confirm cr-confirm">Add to my day</button>
+    <button type="button" class="btn-capture-cancel cr-cancel">Not now</button>
+  </div>
+</section>

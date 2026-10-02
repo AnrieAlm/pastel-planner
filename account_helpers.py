@@ -7,7 +7,8 @@ from zoneinfo import ZoneInfo
 
 from bson import ObjectId
 
-from db import (bucket_items, devices, grocery, habit_logs, notes, routine_logs, routines, users)
+from db import (bucket_items, capture_sessions, devices, grocery, habit_logs, notes, routine_logs,
+                routines, users)
 from notes_helpers import cleanText
 
 NAME_MAX = 60
@@ -85,6 +86,7 @@ def exportAllData(userId):
 # Permanently removes everything this person has stored, including the profile.
 # (The Firebase login itself is deleted by the browser afterwards - see firebase-login.js.)
 def deleteAccountData(userId):
-    for collection in (notes, bucket_items, grocery, habit_logs, routines, routine_logs, devices):
+    for collection in (notes, bucket_items, grocery, habit_logs, routines, routine_logs, devices,
+                       capture_sessions):
         collection.delete_many({"user_id": userId})
     users.delete_one({"user_id": userId})
