@@ -92,8 +92,9 @@
 .global-play-fab:active {
   transform: translateY(0) scale(0.94);
 }
-.global-play-fab .material-symbols-outlined {
-  font-size: 28px;
+.global-play-fab svg {
+  width: 28px;
+  height: 28px;
 }
 
 /* Hidden on mobile — the bottom-nav's centre button already becomes
@@ -109,3 +110,45 @@
     transition: none;
   }
 }
+
+/* The calm message shown when something could not be sent (signed out, or offline).
+   It sits above everything, even open sheets, so it can be seen while a form is still on screen. */
+.session-banner {
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  width: min(560px, calc(100% - 2 * var(--sp-md)));
+  margin-top: var(--sp-sm);
+  padding: var(--sp-md);
+  display: grid;
+  gap: var(--sp-sm);
+  background: var(--bg-raised);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lift);
+  font-size: var(--fs-sm);
+}
+.session-banner a {
+  color: var(--text-primary);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.session-banner a:focus-visible,
+.session-banner-close:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.session-banner-close {
+  justify-self: end;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 var(--sp-md);
+  background: transparent;
+  color: var(--text-primary);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  font-weight: 700;
+}
+.session-banner-close:hover { background: var(--bg-card); }
+

@@ -12,7 +12,7 @@ const PAGE_URLS = {
 };
 
 const NAV_ADD_CONFIG = {
-  today:      { mode: 'add',  color: 'var(--accent-primary)',    modal: 'new-note',    label: 'New note' },
+  today:      { mode: 'play', color: 'var(--accent-primary)', label: "Play today's summary" },
   notes:      { mode: 'add',  color: 'var(--accent-tertiary)',   modal: 'new-note',    label: 'New note' },
   calendar:   { mode: 'add',  color: 'var(--accent-secondary)',  modal: 'new-note',    label: 'Add event' },
   routine:    { mode: 'add',  color: 'var(--accent-primary)',    modal: 'new-routine', label: 'New routine' },
@@ -43,8 +43,9 @@ const Navigation = {
     document.addEventListener('click', (e) => {
       const btn = e.target.closest('.bottom-nav-add');
       if (!btn) return;
-      // Nothing special to do: the button's own data-modal attribute (kept in sync by
-      // updateNavAddButton) is already picked up by Modals.js's generic [data-modal] listener
+      // Nothing to do here: on Today the Play action is handled in sinead-ai.js, and on every other page
+      // the button's own data-modal attribute (kept in sync by updateNavAddButton) is picked up by
+      // Modals.js's generic [data-modal] listener
     });
 
     // Set the correct state for whichever page is active on first load
@@ -93,8 +94,8 @@ const Navigation = {
   },
 
   // Reshapes the mobile bottom-nav's centre button to match whichever page is now active:
-  // a "+" tinted that page's own colour, opening that page's add sheet. Pages with no listed
-  // config (Habits, Settings) get the default "+", Sage, which opens New note.
+  // a Play button (Sage) on Today, or a "+" tinted that page's own colour that opens the page's add
+  // sheet. Pages with no listed config (Habits, Settings) get the default "+", Sage, which opens New note.
   updateNavAddButton(pageName) {
     const btn = document.querySelector('.bottom-nav-add');
     if (!btn) return;
@@ -104,8 +105,18 @@ const Navigation = {
     btn.style.background = config.color;
     btn.dataset.navAddMode = config.mode;
     btn.setAttribute('aria-label', config.label);
-    btn.setAttribute('data-modal', config.modal);
-    btn.innerHTML = '<span class="nav-icon" data-nav-icon="add"></span>';
+
+    if (config.mode === 'play') {
+      // On Today the centre button plays the day's summary (sinead-ai.js does the playing).
+      // New notes on Today are added from the "What's on your mind?" box.
+      btn.removeAttribute('data-modal');
+      btn.setAttribute('aria-pressed', 'false');
+      btn.innerHTML = '<span class="nav-icon" data-nav-icon="play"></span>';
+    } else {
+      btn.removeAttribute('aria-pressed');
+      btn.setAttribute('data-modal', config.modal);
+      btn.innerHTML = '<span class="nav-icon" data-nav-icon="add"></span>';
+    }
     NavIcons.apply(btn);
   }
 };

@@ -61,6 +61,16 @@ part of your day you didn't mention (meals, people, work, errands, travel, rest)
 or spoken, goes through the same review card. She asks at most twice, never after a one-liner, and you
 can switch it off with the "Follow-up questions" toggle in Settings (or "Don't ask me these").
 
+## Play today's summary
+
+The Play button (the wide one under Today, the floating one on desktop, and the bottom bar's centre button
+on phones while you are on Today) reads your day aloud and shows the same words in a small panel: the date,
+what is planned and what is already done, anything left from yesterday, urgent things, today's habits, where
+your routine starts, and what is coming up. It is built from your own notes by `briefing_helpers.py`, with no
+AI, so it is instant and free. The voice is your browser's built-in one (it prefers an Irish, then British,
+English voice), so it needs no key and nothing is sent anywhere. Browsers that cannot speak still show the
+words. Tap again to stop. New notes on a phone are added from the "What's on your mind?" box on Today.
+
 ## Settings switches
 
 Real, saved switches (a missing value always means "on"): **Follow-up questions**, **Voice assistant**
@@ -69,4 +79,12 @@ honoured by `reminders.py`, and only matter while Push notifications are on. Dea
 gentle nudge on the morning (08:00 to 12:00, in your own timezone) of a note's finish-by day and one on
 its deadline day. Accent voice, ElevenLabs readbacks, pattern learning, morning briefing and routine
 vibration are not built yet, so they show as disabled "Coming soon" switches instead of pretending to work.
+
+## Never losing what you typed (session guard)
+
+Firebase login tokens last one hour. `static/js/session-guard.js` quietly refreshes the token just
+before anything is saved (every Save button, `form.submit()`, and every `fetch` that changes data under
+`/api/`). If you really have been signed out, or you are offline, nothing is sent: a calm message appears
+on top of the page, your form stays open with your words in it, and "Log in again" opens the login page in
+a new tab. Once you are signed in, press Save again. Opening pages is not affected.
 

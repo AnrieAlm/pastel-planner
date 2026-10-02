@@ -316,28 +316,14 @@
   box-shadow: var(--shadow-lift);
 }
 
-/* Material Symbols Outlined — Google's baseline reset, scoped here since
-   .btn-briefing is currently the only place this font icon is used.
-   Font-variation-settings tuned toward the rest of the app's line-icon
-   weight (unfilled, medium weight) rather than the family's defaults. */
-.material-symbols-outlined {
-  font-family: 'Material Symbols Outlined';
-  font-weight: normal;
-  font-style: normal;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
-  display: inline-block;
-  white-space: nowrap;
-  word-wrap: normal;
-  direction: ltr;
-  -webkit-font-smoothing: antialiased;
-  font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+.btn-briefing svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
 }
+.btn-briefing:focus-visible,
+.global-play-fab:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
 
-.btn-briefing .material-symbols-outlined {
-  font-size: 22px;
-}
 /* ===== Day capture — speak/type everything, Sinéad organises it =====
    AI parsing isn't wired to a real backend yet — submitting shows mock
    suggestion chips (see js/today.js) rather than an actual parse. */
@@ -835,3 +821,58 @@ button.habit-chip.done .habit-chip-tick {
 @media (max-width: 600px) {
   .capture-followup .btn-capture-cancel { width: 100%; }
 }
+
+/* ===== The summary panel opened by the Play button (shows the words being read) ===== */
+.briefing-panel {
+  position: fixed;
+  right: var(--sp-md);
+  bottom: calc(var(--sp-xl, 32px) + env(safe-area-inset-bottom, 0px));
+  z-index: 900;
+  width: min(420px, calc(100% - 2 * var(--sp-md)));
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+  padding: var(--sp-md);
+  background: var(--bg-raised);
+  color: var(--text-primary);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lift);
+}
+.briefing-panel h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  margin-bottom: var(--sp-sm);
+}
+.briefing-lines { list-style: none; margin: 0 0 var(--sp-md); padding: 0; display: grid; gap: var(--sp-sm); }
+.briefing-lines li {
+  font-size: var(--fs-base);
+  line-height: 1.45;
+  padding: var(--sp-xs) var(--sp-sm);
+  border-left: 3px solid transparent;
+  border-radius: var(--radius-sm);
+  transition: background 0.2s var(--ease-soft), border-color 0.2s var(--ease-soft);
+}
+/* The sentence being read right now (also shown by a coloured edge, never by colour alone) */
+.briefing-lines li.speaking { background: var(--bg-card); border-left-color: var(--accent-primary); font-weight: 600; }
+.briefing-close {
+  min-height: 44px;
+  padding: 0 var(--sp-lg);
+  background: transparent;
+  color: var(--text-primary);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  font-weight: 700;
+}
+.briefing-close:hover { background: var(--bg-card); }
+.briefing-close:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+/* On phones the bar at the bottom needs room; on desktop the floating Play button does */
+@media (max-width: 700px) {
+  .briefing-panel { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (min-width: 701px) {
+  .briefing-panel { right: 32px; bottom: 104px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .briefing-lines li { transition: none; }
+}
+

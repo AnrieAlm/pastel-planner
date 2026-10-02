@@ -20,6 +20,7 @@ from ai import (AUDIO_MAX_BYTES, AUDIO_MIN_BYTES, TEXT_MAX, AiUnavailable, RateL
 from account_helpers import (cleanTimezone, deleteAccountData, exportAllData, getTimezoneChoices,
                              setFollowups, setPreference, updateProfile)
 from auth import checkRequest
+from briefing_helpers import buildBriefing
 from calendar_helpers import (buildGoogleCalendarLink, buildHabitIcs, buildIcs, getCalendarView,
                               habitCalendarLink, safeFileName)
 from bucket_helpers import (addBucketItem, deleteBucketItem, getBucketItems, moveBucketNotesToWishList,
@@ -846,6 +847,20 @@ def apiGroceryRestore(body: GroceryRestoreBody, request: Request):
     if not count:
         return JSONResponse({"error": "nothing to undo"}, status_code=404)
     return {"ok": True, "count": count}
+
+
+# ---------- The "Play today's summary" button.
+
+# JSON: today's summary as short sentences (the browser reads them aloud and also shows them).
+# Built from this person's own notes, habits and routine, with no AI involved. "no-store" tells the
+# browser never to keep a copy, because it is private.
+@app.get("/api/briefing")
+def apiBriefing(request: Request):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+
+    return JSONResponse(buildBriefing(user), headers={"Cache-Control": "no-store"})
 
 
 # ---------- Sinéad (AI): sort a typed brain-dump into a DRAFT, then save only what is confirmed.

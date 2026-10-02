@@ -73,9 +73,5 @@
     height: 22px;
   }
 
-  /* Play icon shown on Today instead of the usual "+" — sized to match */
-  .bottom-nav-add .material-symbols-outlined {
-    font-size: 26px;
-    color: inherit;
-  }
+  /* The Play / Stop icon on Today is an svg like the "+", so .bottom-nav-add svg above already sizes it */
 }

@@ -26,6 +26,20 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
+// Gives session-guard.js (a plain script that loads before this one) what it needs to refresh the
+// login token just before something is saved. See session-guard.js for the full story.
+if (window.CalyxSession) {
+  window.CalyxSession.attach({
+    // Who is signed in right now? (waits until Firebase has finished checking, so a page that
+    // has only just opened is not wrongly treated as "signed out")
+    getUser: async () => {
+      if (typeof auth.authStateReady === "function") await auth.authStateReady();
+      return auth.currentUser;
+    },
+    setCookie: (token) => setTokenCookie(token),
+  });
+}
+
 // Saves the login token in a cookie so the server can read it on every page request
 function setTokenCookie(token) {
   document.cookie = "token=" + token + ";path=/;SameSite=Lax;Secure";
@@ -67,6 +81,9 @@ onIdTokenChanged(auth, async (user) => {
     clearTokenCookie();
     return;
   }
+
+  // Signed in (possibly just now, in another tab): any "you've been signed out" message can go
+  if (window.CalyxSession) window.CalyxSession.signedIn();
 
   // The server said this account is not allowed: sign out so we do not loop
   if (isLoginPage && loginReason === "denied") {
