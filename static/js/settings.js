@@ -9,6 +9,7 @@ const Settings = {
     this.initDangerZone();
     this.initPush();
     this.initSavedToggles();
+    this.initVoicePicker();
   },
 
   // The switches that are saved on the server straight away. If saving fails the switch goes
@@ -47,6 +48,57 @@ const Settings = {
         }
       });
     }
+  },
+
+  // The voice picker for "Play today's summary". The list is whatever voices THIS device has (they
+  // are installed on each phone or computer, not in the app), so the choice is saved on this device only.
+  async initVoicePicker() {
+    const select = document.getElementById('voice-select');
+    const testButton = document.getElementById('voice-test');
+    const note = document.getElementById('voice-select-note');
+    if (!select || !note || typeof SineadAI === 'undefined') return;
+
+    const options = await SineadAI.getVoiceOptions();
+    if (!options) {
+      select.disabled = true;
+      testButton.disabled = true;
+      note.textContent = 'This browser can\u2019t read aloud, so the summary will only appear as words.';
+      return;
+    }
+    if (!options.voices.length) {
+      select.disabled = true;
+      testButton.disabled = true;
+      note.textContent = 'No English voices were found on this device yet. The summary will still appear as words.';
+      return;
+    }
+
+    // "en-IE" becomes "Irish English" where the browser knows the name
+    const languageName = (tag) => {
+      try { return new Intl.DisplayNames(['en'], { type: 'language', languageDisplay: 'dialect' }).of(tag.replace('_', '-')) || tag; }
+      catch (error) { return tag; }
+    };
+    // Built with DOM calls and textContent, so a strange voice name can never be treated as HTML
+    select.options[0].textContent = options.automatic ? `Automatic (${options.automatic.name})` : 'Automatic';
+    for (const voice of options.voices) {
+      const option = document.createElement('option');
+      option.value = voice.voiceURI || voice.name;
+      option.textContent = `${voice.name} (${languageName(voice.lang)})`;
+      select.appendChild(option);
+    }
+    const saved = SineadAI.getSavedVoice();
+    select.value = [...select.options].some(o => o.value === saved) ? saved : '';
+
+    const hasIrish = options.voices.some(v => String(v.lang).replace('_', '-').toLowerCase() === 'en-ie');
+    const explain = hasIrish
+      ? 'An Irish English voice is available on this device. Your choice is saved on this device only.'
+      : 'This device doesn\u2019t have an Irish English voice, so Sinéad uses the closest one it has. Voices are installed on each phone or computer, not in the app. On an iPhone, the Irish English voice is called Moira and can be added in Settings (Accessibility, then Spoken Content, then Voices).';
+    note.textContent = explain;
+
+    select.addEventListener('change', () => {
+      SineadAI.setSavedVoice(select.value);
+      note.textContent = select.value ? 'Saved for this device.' : 'Back to Automatic.';
+    });
+    testButton.addEventListener('click', () => SineadAI.testVoice());
   },
 
   // "Push notifications": reflects whether this browser is actually registered, and turns

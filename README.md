@@ -71,6 +71,15 @@ AI, so it is instant and free. The voice is your browser's built-in one (it pref
 English voice), so it needs no key and nothing is sent anywhere. Browsers that cannot speak still show the
 words. Tap again to stop. New notes on a phone are added from the "What's on your mind?" box on Today.
 
+### Choosing the summary voice
+
+The summary is read with a voice that is installed on your phone or computer (the app has no voice of its
+own), so which voices you can use depends on the device. Automatic prefers Irish English, then British
+English, then any other English, and only uses Indian English if it is the only English voice there is. You
+can pick a voice yourself in Settings > Sinéad > "Voice for the summary" and tap "Hear this voice". The choice
+is saved on that device only. If a device has no Irish voice (on an iPhone it is called Moira), the way to get
+a guaranteed Irish voice everywhere is a server-side voice service such as the planned ElevenLabs option.
+
 ## Settings switches
 
 Real, saved switches (a missing value always means "on"): **Follow-up questions**, **Voice assistant**

@@ -92,19 +92,23 @@ const SineadAI = {
       this._say('This browser can\u2019t read aloud, so here it is in words.');
       return;
     }
-    this._speak(sentences, items, run);
+    // Browsers often load their voices a moment AFTER the page opens. If we spoke before they were
+    // there, the device's own default voice would be used instead of the one we want.
+    const voices = await this._loadVoices();
+    if (run !== this._run) return;                       // stopped while the voices were loading
+    this._speak(sentences, items, run, voices);
   },
 
   // Reads the sentences one after another (short pieces are more reliable than one long speech)
-  _speak(sentences, items, run) {
+  _speak(sentences, items, run, voices) {
     const synth = window.speechSynthesis;
     synth.cancel();                                      // clear anything still queued
-    const voice = this._pickVoice();
+    const voice = this.chooseVoice(voices || []);
     this._showState('speaking');
 
     sentences.forEach((sentence, index) => {
       const utterance = new SpeechSynthesisUtterance(sentence);
-      if (voice) { utterance.voice = voice; utterance.lang = voice.lang; }
+      this._applyVoice(utterance, voice);
       utterance.rate = 0.95;
       utterance.onstart = () => {
         if (run !== this._run) return;
@@ -124,11 +128,95 @@ const SineadAI = {
     });
   },
 
-  // Prefers an Irish, then British, then any English voice
-  _pickVoice() {
-    const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
-    const starts = (prefix) => voices.find(v => v.lang && v.lang.replace('_', '-').toLowerCase().startsWith(prefix));
-    return starts('en-ie') || starts('en-gb') || starts('en') || null;
+  // ----- Choosing the voice. Voices are installed on each device (not in this app), so what is
+  // available depends on your phone or computer. The order of preference is:
+  //   1. the voice you picked in Settings (saved on this device), if it is still there
+  //   2. Irish English, 3. British English, 4. any other English EXCEPT Indian English
+  //   5. Indian English, only if nothing else exists, 6. the device's own default
+  VOICE_KEY: 'calyx-summary-voice',
+
+  // Waits (up to a second and a half) for the browser to finish loading its voices
+  _loadVoices() {
+    const synth = window.speechSynthesis;
+    const ready = synth.getVoices ? synth.getVoices() : [];
+    if (ready.length) return Promise.resolve(ready);
+    return new Promise((resolve) => {
+      let finished = false;
+      const done = () => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(timer);
+        if (synth.removeEventListener) synth.removeEventListener('voiceschanged', done);
+        resolve(synth.getVoices ? synth.getVoices() : []);
+      };
+      const timer = setTimeout(done, 1500);
+      if (synth.addEventListener) synth.addEventListener('voiceschanged', done);
+    });
+  },
+
+  // "en_GB" and "en-GB" both become "en-gb"
+  _lang(voice) {
+    return String((voice && voice.lang) || '').replace('_', '-').toLowerCase();
+  },
+
+  getSavedVoice() {
+    try { return localStorage.getItem(this.VOICE_KEY) || ''; } catch (error) { return ''; }
+  },
+
+  // An empty id means "Automatic"
+  setSavedVoice(id) {
+    try {
+      if (id) localStorage.setItem(this.VOICE_KEY, id);
+      else localStorage.removeItem(this.VOICE_KEY);
+    } catch (error) {
+      // Private browsing can refuse storage; the voice then just stays on Automatic
+    }
+  },
+
+  // Picks the voice to use from a list of voices. ignoreSaved = true shows what "Automatic" would pick.
+  chooseVoice(voices, ignoreSaved) {
+    const saved = ignoreSaved ? '' : this.getSavedVoice();
+    if (saved) {
+      const mine = voices.find(v => v.voiceURI === saved || v.name === saved);
+      if (mine) return mine;
+    }
+    const english = voices.filter(v => this._lang(v).startsWith('en'));
+    const first = (test) => english.find(v => test(this._lang(v)));
+    return first(l => l === 'en-ie') || first(l => l === 'en-gb') || first(l => l !== 'en-in')
+      || first(() => true) || null;
+  },
+
+  // Gives an utterance its voice. With no voice found we still ask for Irish English by language.
+  _applyVoice(utterance, voice) {
+    if (voice) {
+      utterance.voice = voice;
+      utterance.lang = voice.lang;
+    } else {
+      utterance.lang = 'en-IE';
+    }
+  },
+
+  // For the Settings picker: the English voices on this device (Irish first, Indian last), and the one
+  // "Automatic" would use. Answers null if this browser can't speak at all.
+  async getVoiceOptions() {
+    if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) return null;
+    const voices = await this._loadVoices();
+    const rank = (v) => ({ 'en-ie': 0, 'en-gb': 1, 'en-in': 3 })[this._lang(v)] ?? 2;
+    const english = voices.filter(v => this._lang(v).startsWith('en'))
+      .sort((a, b) => rank(a) - rank(b) || String(a.name).localeCompare(String(b.name)));
+    return { voices: english, automatic: this.chooseVoice(voices, true) };
+  },
+
+  // The "Hear this voice" button in Settings
+  async testVoice() {
+    if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) return;
+    this.stopBriefing();
+    const voices = await this._loadVoices();
+    const utterance = new SpeechSynthesisUtterance('Hello, this is how I sound. Here is your day.');
+    this._applyVoice(utterance, this.chooseVoice(voices));
+    utterance.rate = 0.95;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
   },
 
   // Came to the end by itself

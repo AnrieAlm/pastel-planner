@@ -76,6 +76,15 @@
       <p id="toggle-voice-note" class="settings-hint">Shows the microphone button on the Today page, so you can speak instead of typing.</p>
 
       <div class="settings-row">
+        <label for="voice-select">Voice for the summary</label>
+        <select id="voice-select" aria-describedby="voice-select-note">
+          <option value="">Automatic</option>
+        </select>
+      </div>
+      <button type="button" id="voice-test" class="btn-modal-secondary">Hear this voice</button>
+      <p id="voice-select-note" class="settings-hint">Looking for the voices on this device…</p>
+
+      <div class="settings-row">
         <label for="toggle-accent">Dublin accent voice <span class="settings-soon">Coming soon</span></label>
         <label class="toggle">
           <input type="checkbox" id="toggle-accent" disabled aria-describedby="toggle-accent-note" />
