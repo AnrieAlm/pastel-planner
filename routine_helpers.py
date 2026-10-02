@@ -96,12 +96,16 @@ def findOverlaps(userId, days, blocks, excludeId=None):
     return conflicts
 
 
-# Adds a new routine. A blank name is ignored (nothing is created), matching how other "add"
-# routes in this app quietly do nothing with an empty title rather than erroring.
+# Adds a new routine. With no name AND no blocks nothing is created; with blocks but no name it
+# is saved as "My routine" so the person's typing is never lost.
 def addRoutine(userId, name, days, blocks):
     cleanName = cleanText(name, NAME_MAX)
     if not cleanName:
-        return None
+        # Blocks were typed but the name was left empty: keep the blocks under a default name
+        # instead of silently throwing them away. No blocks and no name: nothing to save.
+        if not blocks:
+            return None
+        cleanName = "My routine"
     result = routines.insert_one({
         "user_id": userId, "name": cleanName, "days": days, "active": True, "blocks": blocks,
         "created_at": datetime.now(timezone.utc), "deleted_at": None,
@@ -233,3 +237,14 @@ def toggleBlockDone(userId, routineId, blockId, day):
         routine_logs.update_one({"user_id": userId, "date": day}, {"$pull": {"done_block_ids": blockId}})
 
     return True, {"done": newDone, "linkedHabitId": block.get("linked_habit_id")}
+
+
+# When a habit is removed, routine blocks that were linked to it become plain blocks again
+# (otherwise they would point at a habit that no longer exists).
+def unlinkHabit(userId, habitId):
+    for routine in routines.find({"user_id": userId, "blocks.linked_habit_id": habitId}):
+        blocks = routine.get("blocks", [])
+        for block in blocks:
+            if block.get("linked_habit_id") == habitId:
+                block["linked_habit_id"] = None
+        routines.update_one({"_id": routine["_id"], "user_id": userId}, {"$set": {"blocks": blocks}})

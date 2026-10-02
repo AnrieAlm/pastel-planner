@@ -58,17 +58,17 @@ def getUser(userToken):
 
     # $setOnInsert only writes these fields if the document is brand new,
     # so logging in again never overwrites the name or timezone they chose later
-    users.update_one(
-        {"user_id": userId},
-        {"$setOnInsert": {
-            "user_id": userId,
-            "name": startingName,
-            "timezone": "Europe/Dublin",
-            "created_at": datetime.now(timezone.utc),
-            "habits": [],
-        }},
-        upsert=True,
-    )
+    update = {"$setOnInsert": {
+        "user_id": userId,
+        "name": startingName,
+        "timezone": "Europe/Dublin",
+        "created_at": datetime.now(timezone.utc),
+        "habits": [],
+    }}
+    # The email is refreshed on every login (it is shown, read-only, on the Settings page)
+    if email:
+        update["$set"] = {"email": email}
+    users.update_one({"user_id": userId}, update, upsert=True)
     return users.find_one({"user_id": userId}, {"_id": 0})
 
 

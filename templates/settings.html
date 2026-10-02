@@ -9,27 +9,29 @@
       <span class="subtitle">your planner, your way</span>
     </div>
 
-    <!-- Profile -->
-    <div class="settings-section">
+    <!-- Profile: a real form, saved by /update-profile -->
+    <form class="settings-section" method="post" action="/update-profile">
       <h3>Profile</h3>
+      <input type="hidden" name="next" value="/settings" />
       <div class="settings-row">
         <label for="settings-name">Name</label>
-        <input type="text" id="settings-name" value="Maya" />
+        <input type="text" id="settings-name" name="name" maxlength="60" value="{{ user.name }}" />
       </div>
       <div class="settings-row">
         <label for="settings-email">Email</label>
-        <input type="email" id="settings-email" value="maya@example.com" />
+        <input type="email" id="settings-email" value="{{ user.email or '' }}" readonly aria-describedby="settings-email-note" />
       </div>
+      <p id="settings-email-note" style="font-size:var(--fs-xs);color:var(--text-secondary);">This is your login email, so it can't be changed here.</p>
       <div class="settings-row">
         <label for="settings-timezone">Timezone</label>
-        <select id="settings-timezone">
-          <option selected>Europe/Dublin (IST)</option>
-          <option>Asia/Kolkata</option>
-          <option>Europe/Lisbon</option>
+        <select id="settings-timezone" name="timezone">
+          {% for zone in timezones %}
+          <option value="{{ zone }}"{% if zone == user.timezone %} selected{% endif %}>{{ zone }}</option>
+          {% endfor %}
         </select>
       </div>
-      <button class="btn-modal-primary" style="margin-top:var(--sp-sm);">Save changes</button>
-    </div>
+      <button type="submit" class="btn-modal-primary" style="margin-top:var(--sp-sm);">Save changes</button>
+    </form>
 
     <!-- Theme -->
     <div class="settings-section">
@@ -147,7 +149,7 @@
       <h3>Data</h3>
       <div class="settings-row">
         <label>Export all data</label>
-        <button class="btn-modal-secondary">Download as JSON</button>
+        <a class="btn-modal-secondary" href="/export.json" download>Download as JSON</a>
       </div>
     </div>
 

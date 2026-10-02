@@ -24,15 +24,15 @@
     <input type="checkbox" id="new-note-urgent" name="urgent" /> Urgent
   </label>
 
+  <label for="new-note-date">Date (optional)</label>
+  <input type="date" id="new-note-date" name="date" />
+
+  <label for="new-note-time">Time (optional)</label>
+  <input type="time" id="new-note-time" name="time" />
+
   <label for="new-note-deadline">Deadline (optional)</label>
   <input type="date" id="new-note-deadline" name="deadline" />
 
-  <label for="new-note-remind">Remind me (optional)</label>
-  <input type="datetime-local" id="new-note-remind" name="remind" />
-
-  <label for="new-note-deadline">Deadline (optional)</label>
-  <input type="date" id="new-note-deadline" name="deadline" />
-  
   <div class="finish-by-block" hidden>
     <label>When do you want to have it done?</label>
     <div class="suggestion-chips" role="group" aria-label="Quick choices for the finish-by date">
@@ -44,6 +44,9 @@
     <label for="new-note-finish-by">Aim to finish by</label>
     <input type="date" id="new-note-finish-by" name="finish_by" />
   </div>
+
+  <label for="new-note-remind">Remind me (optional)</label>
+  <input type="datetime-local" id="new-note-remind" name="remind" />
 
   <div class="modal-actions">
     <button type="submit" class="btn-modal-primary">Add note</button>

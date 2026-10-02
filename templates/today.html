@@ -64,18 +64,6 @@
     </div>
     {% endif %}
 
-    <!-- Sinéad AI nudge — compact, notification-style rather than a big
-         banner, so it doesn't compete with the capture box and Urgent
-         above it for attention -->
-    <div class="sinead-nudge">
-      <img class="sinead-avatar" src="/static/images/placeholder-avatar.svg" alt="" />
-      <p>🧠 <strong>Sinéad noticed:</strong> You usually pick up chicken on Thursdays — it's Thursday today. Add it to your grocery list?</p>
-      <div class="nudge-actions">
-        <button type="button" class="nudge-add" data-action="accept">Add</button>
-        <button type="button" class="nudge-dismiss" data-action="dismiss" aria-label="Dismiss suggestion"><span class="nav-icon" data-nav-icon="close"></span></button>
-      </div>
-    </div>
-
     {# Routine: every block from every routine active today, merged into one timeline.
        "Now" moves with the real clock; ticking a block also ticks its linked habit. #}
     {% if routineBlocks %}

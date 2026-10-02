@@ -7,8 +7,14 @@ on:
     - cron: "*/15 * * * *"
   workflow_dispatch:       # lets you also run it by hand from the Actions tab, to test it
 
+# Never let two runs overlap (a slow run plus the next scheduled one could send a reminder twice)
+concurrency:
+  group: send-reminders
+  cancel-in-progress: false
+
 jobs:
   send-reminders:
+    timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo

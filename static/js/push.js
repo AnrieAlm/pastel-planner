@@ -128,10 +128,11 @@ window.CalyxPush = {
   },
 };
 
-// If this browser already has permission from a previous visit, quietly keep the registration
-// fresh (tokens can rotate) without asking again
+// If this browser is already registered here, quietly keep the registration fresh (tokens can
+// rotate) without asking again. It checks isEnabled() so that switching push OFF in Settings (or
+// signing out) is not undone by the very next page load.
 (async () => {
-  if (await window.CalyxPush.isSupported() && Notification.permission === 'granted') {
+  if (window.CalyxPush.isEnabled() && await window.CalyxPush.isSupported() && Notification.permission === 'granted') {
     window.CalyxPush.enable();
   }
 })();

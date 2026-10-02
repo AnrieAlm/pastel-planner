@@ -5,7 +5,7 @@
 # Each run does three things:
 #   1. Sends a push notification for any note whose "Remind me" time has arrived.
 #   2. Sends a push notification for any habit that is due today and hasn't fired yet today.
-#   3. Permanently deletes notes that were soft-deleted (Undo) more than 24 hours ago.
+#   3. Permanently deletes notes, wishes and grocery items that were soft-deleted (Undo) more than 24 hours ago.
 #
 # What it deliberately does NOT do yet: an automatic "aim to finish today" nudge on a note's
 # finish-by date. That needs one more field on each note (to avoid repeating the nudge every
@@ -18,7 +18,7 @@ from datetime import datetime, timedelta, timezone
 import firebase_admin
 from firebase_admin import credentials, messaging
 
-from db import devices, notes
+from db import bucket_items, devices, grocery, notes
 from habits_helpers import getHabitsForWeekday
 from notes_helpers import getZone
 
@@ -134,10 +134,14 @@ def sendHabitReminders(users):
     return sentCount
 
 
+# Permanently removes anything that was "deleted" (Undo-able) more than a day ago:
+# notes, bucket-list wishes and grocery items all use the same deleted_at idea
 def deleteOldNotes(nowUtc):
     cutoff = nowUtc - timedelta(hours=DELETE_AFTER_HOURS)
-    result = notes.delete_many({"deleted_at": {"$ne": None, "$lte": cutoff}})
-    return result.deleted_count
+    total = 0
+    for collection in (notes, bucket_items, grocery):
+        total += collection.delete_many({"deleted_at": {"$ne": None, "$lte": cutoff}}).deleted_count
+    return total
 
 
 # Small wrappers around habit_logs so the two functions above read cleanly (and so the
@@ -171,7 +175,7 @@ def main():
     deletedCount = deleteOldNotes(nowUtc)
 
     print(f"Sent {noteCount} note reminder(s), {habitCount} habit reminder(s). "
-          f"Removed {deletedCount} old deleted note(s).")
+          f"Removed {deletedCount} old deleted item(s).")
 
 
 if __name__ == "__main__":

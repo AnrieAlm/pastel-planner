@@ -15,6 +15,8 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from fastapi.templating import Jinja2Templates
 
+from account_helpers import (cleanTimezone, deleteAccountData, exportAllData, getTimezoneChoices,
+                             updateProfile)
 from auth import checkRequest
 from calendar_helpers import (buildGoogleCalendarLink, buildHabitIcs, buildIcs, getCalendarView,
                               habitCalendarLink, safeFileName)
@@ -28,7 +30,7 @@ from habits_helpers import (NAME_MAX, SLOT_LIMIT, cleanDays, getHabitState, getH
                             getHabitsView, setHabitLog)
 from routine_helpers import (addRoutine, buildBlocks, cleanDays as cleanRoutineDays, deleteRoutine,
                              findOverlaps, getDoneBlockIds, getRoutines, getTodayBlocks,
-                             mergeRoutines, toggleBlockDone, updateRoutine)
+                             mergeRoutines, toggleBlockDone, unlinkHabit, updateRoutine)
 from notes_helpers import (FILTERS, CONTENT_MAX, TITLE_MAX, cleanColor, cleanDate, cleanFinishBy,
                            cleanReminder, cleanText, cleanTime, getNotes, getToday, getTodayView,
                            reminderLocalValue, resolveWhen, sameInstant, toObjectId)
@@ -236,7 +238,8 @@ def settingsPage(request: Request):
     user, redirect = getUserOrRedirect(request)
     if redirect:
         return redirect
-    return renderPage(request, "settings.html", "settings", {"user": user})
+    return renderPage(request, "settings.html", "settings",
+                      {"user": user, "timezones": getTimezoneChoices(user["timezone"])})
 
 
 # JSON route used to check that login works. A JSON route answers 401 (not a redirect) when
@@ -247,6 +250,43 @@ def apiMe(request: Request):
     if status != "ok":
         return JSONResponse({"error": "not logged in"}, status_code=401)
     return {"user_id": user["user_id"], "name": user["name"], "timezone": user["timezone"]}
+
+
+# ---------- Settings: save the profile, download everything, delete the account.
+
+# Save the name and timezone (from the Settings page)
+@app.post("/update-profile")
+def updateProfileRoute(request: Request, name: str = Form(""), zoneName: str = Form("", alias="timezone"),
+                       nextUrl: str = Form("/settings", alias="next")):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    updateProfile(user["user_id"], name, zoneName)
+    return RedirectResponse(safeNext(nextUrl, "/settings"), status_code=302)
+
+
+# "Download as JSON": everything this person has stored, as a file
+@app.get("/export.json")
+def exportData(request: Request):
+    user, redirect = getUserOrRedirect(request)
+    if redirect:
+        return redirect
+
+    return Response(exportAllData(user["user_id"]), media_type="application/json",
+                    headers={"Content-Disposition": 'attachment; filename="calyx-planner-export.json"'})
+
+
+# JSON: permanently deletes all of this person's data. The browser then deletes the Firebase
+# login itself and goes to the login page (see settings.js).
+@app.post("/api/delete-account")
+def apiDeleteAccount(request: Request):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+
+    deleteAccountData(user["user_id"])
+    return {"ok": True}
 
 
 # ---------- Note actions (forms). Each one checks the login first, only touches
@@ -320,6 +360,9 @@ def updateNote(noteId: str, request: Request, title: str = Form(""), content: st
             # something else about an already-reminded note should not send it again
             if not sameInstant(newReminder, existing.get("reminder_at")):
                 changes["reminder_sent"] = False
+            # Giving a note a different date brings it back into "From yesterday" if it was let go
+            if noteDate and noteDate != existing.get("date"):
+                changes["dismissed"] = False
             # An empty title is ignored, so a note never ends up with no name
             cleanTitle = cleanText(title, TITLE_MAX)
             if cleanTitle:
@@ -572,6 +615,7 @@ def removeHabit(habitId: str, request: Request, nextUrl: str = Form("/habits", a
         return redirect
 
     users.update_one({"user_id": user["user_id"]}, {"$pull": {"habits": {"habit_id": habitId}}})
+    unlinkHabit(user["user_id"], habitId)
     return RedirectResponse(safeNext(nextUrl, "/habits"), status_code=302)
 
 
@@ -701,6 +745,8 @@ def apiToggleRoutineBlock(routineId: str, blockId: str, body: RoutineBlockBody, 
 
     today = getToday(user["timezone"])
     day = cleanDate(body.date) or today.isoformat()
+    if day > today.isoformat() or day < (today - timedelta(days=14)).isoformat():
+        return JSONResponse({"error": "that day can't be changed"}, status_code=400)
     ok, info = toggleBlockDone(user["user_id"], routineId, blockId, day)
     if not ok:
         return JSONResponse({"error": "not found"}, status_code=404)

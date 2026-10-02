@@ -8,6 +8,7 @@ import {
   onIdTokenChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  deleteUser,
   signOut,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
@@ -94,6 +95,14 @@ window.calyxAuth = {
   async signUp(email, password) {
     const result = await createUserWithEmailAndPassword(auth, email, password);
     setTokenCookie(await result.user.getIdToken());
+  },
+
+  // Deletes the Firebase login of whoever is signed in (Firebase may refuse if the sign-in is old)
+  async deleteAccountUser() {
+    if (auth.currentUser) {
+      await deleteUser(auth.currentUser);
+    }
+    clearTokenCookie();
   },
 
   async signOutUser() {

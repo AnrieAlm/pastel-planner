@@ -18,7 +18,7 @@ const Modals = {
     // Escape closes the modal — required by the original design system
     // spec ("Keyboard: Escape closes modal") but never implemented
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !this.overlay.classList.contains('hidden')) {
+      if (e.key === 'Escape' && this.overlay && !this.overlay.classList.contains('hidden')) {
         this.close();
       }
     });
