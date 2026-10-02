@@ -8,42 +8,51 @@ const Settings = {
     this.initTheme();
     this.initDangerZone();
     this.initPush();
-    this.initFollowups();
+    this.initSavedToggles();
   },
 
-  // "Follow-up questions" switch: saved on the server straight away. If saving fails the switch
-  // goes back to how it was, so what you see is always what is really saved.
-  initFollowups() {
-    const toggle = document.getElementById('toggle-followups');
-    const note = document.getElementById('toggle-followups-note');
-    if (!toggle) return;
-    const original = note ? note.textContent : '';
+  // The switches that are saved on the server straight away. If saving fails the switch goes
+  // back to how it was, so what you see is always what is really saved.
+  initSavedToggles() {
+    const saved = [
+      { id: 'toggle-followups', url: '/api/followups' },
+      { id: 'toggle-voice', url: '/api/preferences/voice' },
+      { id: 'toggle-habit-reminder', url: '/api/preferences/habit_reminders' },
+      { id: 'toggle-deadline', url: '/api/preferences/deadline_alerts' }
+    ];
 
-    toggle.addEventListener('change', async () => {
-      const wanted = toggle.checked;
-      toggle.disabled = true;
-      try {
-        const response = await fetch('/api/followups', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ enabled: wanted })
-        });
-        if (response.status === 401) { window.location.href = '/login'; return; }
-        if (!response.ok) throw new Error('save failed');
-        if (note) note.textContent = original;
-      } catch (error) {
-        toggle.checked = !wanted;
-        if (note) note.textContent = 'Couldn\u2019t save that. Please try again.';
-      } finally {
-        toggle.disabled = false;
-      }
-    });
+    for (const { id, url } of saved) {
+      const toggle = document.getElementById(id);
+      const note = document.getElementById(id + '-note');
+      if (!toggle) continue;
+      const original = note ? note.textContent : '';
+
+      toggle.addEventListener('change', async () => {
+        const wanted = toggle.checked;
+        toggle.disabled = true;
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled: wanted })
+          });
+          if (response.status === 401) { window.location.href = '/login'; return; }
+          if (!response.ok) throw new Error('save failed');
+          if (note) note.textContent = original;
+        } catch (error) {
+          toggle.checked = !wanted;
+          if (note) note.textContent = 'Couldn\u2019t save that. Please try again.';
+        } finally {
+          toggle.disabled = false;
+        }
+      });
+    }
   },
 
   // "Push notifications": reflects whether this browser is actually registered, and turns
   // registration on or off through window.CalyxPush (see push.js). The three toggles under it
-  // (vibration, habit reminders, deadline alerts) are still a visual preview only — reminders.py
-  // currently sends all three kinds together whenever this master toggle is on.
+  // Habit reminders and Deadline alerts (saved by initSavedToggles above) only matter while this master
+  // switch is on, because nothing can be delivered to a browser that isn't registered.
   async initPush() {
     const toggle = document.getElementById('toggle-push');
     const note = document.getElementById('toggle-push-note');

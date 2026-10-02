@@ -55,9 +55,23 @@ def updateProfile(userId, name, timezoneName):
         users.update_one({"user_id": userId}, {"$set": changes})
 
 
+# The on/off switches on the Settings page that are saved on the person's own document.
+# A missing value always means "on", so older accounts keep working without any migration.
+PREFERENCES = ("followups", "voice", "habit_reminders", "deadline_alerts")
+
+
+# Saves one switch. Returns False for a name that is not on the list (so a forged request
+# can never write an arbitrary field onto the user document).
+def setPreference(userId, name, enabled):
+    if name not in PREFERENCES:
+        return False
+    users.update_one({"user_id": userId}, {"$set": {name: bool(enabled)}})
+    return True
+
+
 # "Follow-up questions" on or off (Sinéad asking "did you miss anything?" after a brain-dump)
 def setFollowups(userId, enabled):
-    users.update_one({"user_id": userId}, {"$set": {"followups": bool(enabled)}})
+    setPreference(userId, "followups", enabled)
 
 
 # MongoDB ids and dates are not plain JSON, so turn them into text first

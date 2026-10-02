@@ -61,3 +61,12 @@ part of your day you didn't mention (meals, people, work, errands, travel, rest)
 or spoken, goes through the same review card. She asks at most twice, never after a one-liner, and you
 can switch it off with the "Follow-up questions" toggle in Settings (or "Don't ask me these").
 
+## Settings switches
+
+Real, saved switches (a missing value always means "on"): **Follow-up questions**, **Voice assistant**
+(shows or hides the microphone on Today), **Habit reminders** and **Deadline alerts**. The last two are
+honoured by `reminders.py`, and only matter while Push notifications are on. Deadline alerts send one
+gentle nudge on the morning (08:00 to 12:00, in your own timezone) of a note's finish-by day and one on
+its deadline day. Accent voice, ElevenLabs readbacks, pattern learning, morning briefing and routine
+vibration are not built yet, so they show as disabled "Coming soon" switches instead of pretending to work.
+

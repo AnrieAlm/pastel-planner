@@ -64,92 +64,95 @@
           <span class="slider" aria-hidden="true"></span>
         </label>
       </div>
-      <p id="toggle-followups-note" style="font-size:var(--fs-xs);color:var(--text-secondary);">After you add a few things, Sinéad may ask if there's anything else for your day. No pressure to answer.</p>
+      <p id="toggle-followups-note" class="settings-hint">After you add a few things, Sinéad may ask if there's anything else for your day. No pressure to answer.</p>
 
       <div class="settings-row">
         <label for="toggle-voice">Voice assistant</label>
         <label class="toggle">
-          <input type="checkbox" id="toggle-voice" checked />
+          <input type="checkbox" id="toggle-voice"{% if user.voice != false %} checked{% endif %} />
           <span class="slider" aria-hidden="true"></span>
         </label>
       </div>
-      <p style="font-size:var(--fs-xs);color:var(--text-secondary);">Speak to Sinéad from the Today page</p>
+      <p id="toggle-voice-note" class="settings-hint">Shows the microphone button on the Today page, so you can speak instead of typing.</p>
 
       <div class="settings-row">
-        <label for="toggle-accent">Dublin accent voice</label>
+        <label for="toggle-accent">Dublin accent voice <span class="settings-soon">Coming soon</span></label>
         <label class="toggle">
-          <input type="checkbox" id="toggle-accent" checked />
+          <input type="checkbox" id="toggle-accent" disabled aria-describedby="toggle-accent-note" />
           <span class="slider" aria-hidden="true"></span>
         </label>
       </div>
+      <p id="toggle-accent-note" class="settings-hint">Sinéad speaking back to you. Not built yet.</p>
 
       <div class="settings-row">
-        <label for="toggle-tts">ElevenLabs Irish voice for readbacks</label>
+        <label for="toggle-tts">ElevenLabs Irish voice for readbacks <span class="settings-soon">Coming soon</span></label>
         <label class="toggle">
-          <input type="checkbox" id="toggle-tts" />
+          <input type="checkbox" id="toggle-tts" disabled aria-describedby="toggle-tts-note" />
           <span class="slider" aria-hidden="true"></span>
         </label>
       </div>
+      <p id="toggle-tts-note" class="settings-hint">Hear your items read back. Not built yet.</p>
 
       <div class="settings-row">
-        <label for="toggle-pattern">Pattern learning</label>
+        <label for="toggle-pattern">Pattern learning <span class="settings-soon">Coming soon</span></label>
         <label class="toggle">
-          <input type="checkbox" id="toggle-pattern" checked />
+          <input type="checkbox" id="toggle-pattern" disabled aria-describedby="toggle-pattern-note" />
           <span class="slider" aria-hidden="true"></span>
         </label>
       </div>
+      <p id="toggle-pattern-note" class="settings-hint">Gentle suggestions from your habits over time. Not built yet.</p>
 
       <div class="settings-row">
-        <label for="toggle-briefing">Morning briefing</label>
+        <label for="toggle-briefing">Morning briefing <span class="settings-soon">Coming soon</span></label>
         <label class="toggle">
-          <input type="checkbox" id="toggle-briefing" checked />
+          <input type="checkbox" id="toggle-briefing" disabled aria-describedby="toggle-briefing-note" />
           <span class="slider" aria-hidden="true"></span>
         </label>
       </div>
-      <p style="font-size:var(--fs-xs);color:var(--text-secondary);">Auto-play when you open the app</p>
+      <p id="toggle-briefing-note" class="settings-hint">A spoken summary of your day. Not built yet.</p>
     </div>
 
     <!-- Notifications -->
     <div class="settings-section">
-      <h3>Notifications &amp; vibration</h3>
+      <h3>Notifications</h3>
       <div class="settings-row">
-      
-                  <label for="toggle-push">Push notifications</label>
+        <label for="toggle-push">Push notifications</label>
         <label class="toggle">
           <input type="checkbox" id="toggle-push" />
           <span class="slider" aria-hidden="true"></span>
         </label>
       </div>
-      <p style="font-size:var(--fs-xs);color:var(--text-secondary);" id="toggle-push-note">Reminders for notes and habits</p>
-
-      <div class="settings-row">
-        <label for="toggle-vibrate">Routine vibration</label>
-        <label class="toggle">
-          <input type="checkbox" id="toggle-vibrate" checked />
-          <span class="slider" aria-hidden="true"></span>
-        </label>
-      </div>
-      <p style="font-size:var(--fs-xs);color:var(--text-secondary);">Vibrate at the start of each routine block</p>
+      <p class="settings-hint" id="toggle-push-note">Reminders for notes and habits</p>
 
       <div class="settings-row">
         <label for="toggle-habit-reminder">Habit reminders</label>
         <label class="toggle">
-          <input type="checkbox" id="toggle-habit-reminder" checked />
+          <input type="checkbox" id="toggle-habit-reminder"{% if user.habit_reminders != false %} checked{% endif %} />
           <span class="slider" aria-hidden="true"></span>
         </label>
       </div>
+      <p id="toggle-habit-reminder-note" class="settings-hint">A nudge at the time you set for each habit. Needs push notifications on.</p>
 
       <div class="settings-row">
         <label for="toggle-deadline">Deadline alerts</label>
         <label class="toggle">
-          <input type="checkbox" id="toggle-deadline" checked />
+          <input type="checkbox" id="toggle-deadline"{% if user.deadline_alerts != false %} checked{% endif %} />
           <span class="slider" aria-hidden="true"></span>
         </label>
       </div>
-      <p style="font-size:var(--fs-xs);color:var(--text-secondary);">Morning of finish-by date</p>
+      <p id="toggle-deadline-note" class="settings-hint">One gentle nudge on the morning of a note's finish-by day, and another on its deadline. Needs push notifications on.</p>
+
+      <div class="settings-row">
+        <label for="toggle-vibrate">Routine vibration <span class="settings-soon">Coming soon</span></label>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-vibrate" disabled aria-describedby="toggle-vibrate-note" />
+          <span class="slider" aria-hidden="true"></span>
+        </label>
+      </div>
+      <p id="toggle-vibrate-note" class="settings-hint">Buzz at the start of each routine block. Not built yet.</p>
 
       <div class="settings-note">
-        📱 iPhone users: Add to Home Screen for vibration and push to work. Safari → Share → Add to Home Screen.
+        iPhone users: add the app to your Home Screen for notifications to work (Safari, then Share, then Add to Home Screen).
       </div>
     </div>
 

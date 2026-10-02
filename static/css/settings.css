@@ -205,3 +205,26 @@
 .btn-delete:hover {
   background: color-mix(in srgb, var(--accent-secondary) 10%, transparent);
 }
+
+/* Small helper text under a switch */
+.settings-hint {
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  margin-bottom: var(--sp-sm);
+}
+
+/* "Coming soon" switches: clearly off, clearly not clickable, never mistaken for a real setting */
+.settings-soon {
+  display: inline-block;
+  margin-left: var(--sp-xs);
+  padding: 2px var(--sp-sm);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+.toggle input:disabled + .slider { opacity: 0.45; cursor: not-allowed; }
+

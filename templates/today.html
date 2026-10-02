@@ -23,10 +23,13 @@
       <div class="capture-composer">
         <textarea id="today-capture-input" rows="3" aria-label="What's on your mind?" placeholder="Dentist at 2pm, finish the thesis intro, call Mum…"></textarea>
         <div class="capture-composer-bar">
+          {# The microphone is hidden when Voice assistant is switched off in Settings #}
+          {% if user.voice != false %}
           <button type="button" class="capture-mic-btn" id="today-capture-mic" aria-label="Speak instead of typing" aria-pressed="false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" stroke-width="1.5"/><path d="M5 11a7 7 0 0 0 14 0" stroke-width="1.5" stroke-linecap="square"/><path d="M12 18v3M9 21h6" stroke-width="1.5" stroke-linecap="square"/></svg>
           </button>
           <span class="capture-mic-status hidden" id="today-capture-mic-status" role="status"></span>
+          {% endif %}
           <button type="button" class="btn-capture-submit" id="today-capture-submit" disabled>Sort my day</button>
         </div>
       </div>
@@ -174,6 +177,5 @@
       </ul>
     </div>
 
-    <button class="btn-briefing"><span class="material-symbols-outlined" aria-hidden="true">play_circle</span> Play morning briefing</button>
 </section>
 {% endblock %}

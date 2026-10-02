@@ -18,7 +18,7 @@ from fastapi.templating import Jinja2Templates
 from ai import (AUDIO_MAX_BYTES, AUDIO_MIN_BYTES, TEXT_MAX, AiUnavailable, RateLimited, buildFollowup,
                 confirmDraft, parseDump, transcribeAudio)
 from account_helpers import (cleanTimezone, deleteAccountData, exportAllData, getTimezoneChoices,
-                             setFollowups, updateProfile)
+                             setFollowups, setPreference, updateProfile)
 from auth import checkRequest
 from calendar_helpers import (buildGoogleCalendarLink, buildHabitIcs, buildIcs, getCalendarView,
                               habitCalendarLink, safeFileName)
@@ -362,6 +362,11 @@ def updateNote(noteId: str, request: Request, title: str = Form(""), content: st
             # something else about an already-reminded note should not send it again
             if not sameInstant(newReminder, existing.get("reminder_at")):
                 changes["reminder_sent"] = False
+            # A changed finish-by day or deadline gets its own fresh morning nudge (see reminders.py)
+            if changes["finish_by"] != existing.get("finish_by"):
+                changes["finish_nudge_sent"] = False
+            if changes["deadline"] != existing.get("deadline"):
+                changes["deadline_nudge_sent"] = False
             # Giving a note a different date brings it back into "From yesterday" if it was let go
             if noteDate and noteDate != existing.get("date"):
                 changes["dismissed"] = False
@@ -929,6 +934,23 @@ def apiCaptureConfirm(sessionId: str, body: CaptureConfirmBody, request: Request
 # What the "Don't ask me these" button and the Settings switch send
 class FollowupsBody(BaseModel):
     enabled: bool = True
+
+
+# What the Settings switches send
+class PreferenceBody(BaseModel):
+    enabled: bool = True
+
+
+# JSON: saves one Settings switch (voice, habit_reminders, deadline_alerts). 404 for any other name.
+@app.post("/api/preferences/{name}")
+def apiPreference(name: str, body: PreferenceBody, request: Request):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+
+    if not setPreference(user["user_id"], name, body.enabled):
+        return JSONResponse({"error": "unknown setting"}, status_code=404)
+    return {"ok": True, "name": name, "enabled": body.enabled}
 
 
 # JSON: turns Sinéad's follow-up questions on or off
