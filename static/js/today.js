@@ -200,12 +200,18 @@ const Today = {
       submitBtn.textContent = 'Sorting\u2026';
       submitBtn.setAttribute('aria-busy', 'true');
 
-      const html = slot ? await this.fetchReviewCard(text) : null;
+      const result = slot ? await this.fetchReviewCard(text) : null;
 
       submitBtn.textContent = label;
       submitBtn.removeAttribute('aria-busy');
       syncSubmitState();
 
+      if (result && result.done) {
+        // Answered a follow-up with "no thanks" (or nothing new): all done, show Today
+        window.location.href = '/?added=1';
+        return;
+      }
+      const html = result && result.html;
       if (html) {
         slot.innerHTML = html;
         const card = slot.querySelector('.capture-review');
@@ -397,8 +403,9 @@ const Today = {
     }
   },
 
-  // Asks the server to sort the text. Returns the review card's HTML, or null when it can't
-  // (the caller then shows the simple chips). A 401 sends you to the login page.
+  // Asks the server to sort the text. Returns { html } (the review card), { done: true } (a follow-up
+  // answer with nothing to add), or null when it can't (the caller then shows the simple chips).
+  // A 401 sends you to the login page.
   async fetchReviewCard(text) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 30000);
@@ -406,7 +413,7 @@ const Today = {
       const response = await fetch('/api/capture/parse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, after: this._followupAfter || '' }),
         signal: controller.signal
       });
       if (response.status === 401) {
@@ -418,7 +425,12 @@ const Today = {
         return null;
       }
       if (!response.ok) throw new Error('parse failed');
-      return await response.text();
+      // A JSON answer means "nothing more to add"; otherwise it is the review card's HTML
+      if ((response.headers.get('content-type') || '').includes('application/json')) {
+        const data = await response.json();
+        return data.done ? { done: true } : null;
+      }
+      return { html: await response.text() };
     } catch (error) {
       this.toast('Sinéad is resting, so here\u2019s the simple version.');
       return null;
@@ -444,16 +456,100 @@ const Today = {
     });
 
     slot.addEventListener('click', (e) => {
+      // The two buttons under a follow-up question
+      if (e.target.closest('.cf-done')) {
+        window.location.href = '/?added=1';
+        return;
+      }
+      if (e.target.closest('.cf-stop')) {
+        this.stopFollowups();
+        return;
+      }
+
       const card = e.target.closest('.capture-review');
       if (!card) return;
       if (e.target.closest('.cr-cancel')) {
         slot.innerHTML = '';
+        this.endFollowup();
         document.getElementById('today-capture-input')?.focus();
         return;
       }
       const confirmBtn = e.target.closest('.cr-confirm');
       if (confirmBtn) this.confirmReview(card, confirmBtn);
     });
+  },
+
+  // ----- "Did you miss anything?" Your items are already saved. Sinéad asks one gentle question,
+  // and your answer (typed or spoken) goes into the same box, then through the same review card.
+  // It is capped at two questions, and "I'm all set" or "Don't ask me these" end it at once.
+  showFollowup(followup, committed) {
+    const slot = document.getElementById('capture-review-slot');
+    const input = document.getElementById('today-capture-input');
+    if (!slot || !input) { window.location.href = '/?added=1'; return; }
+
+    const total = Object.values(committed || {}).reduce((sum, n) => sum + n, 0);
+    const saved = total === 1 ? 'Added 1 thing to your day.' : `Added ${total} things to your day.`;
+
+    // Built with textContent (not innerHTML) so the question text can never be treated as HTML
+    const panel = document.createElement('section');
+    panel.className = 'capture-followup';
+    panel.setAttribute('aria-labelledby', 'capture-followup-title');
+
+    const savedLine = document.createElement('p');
+    savedLine.className = 'capture-followup-saved';
+    savedLine.textContent = saved;
+
+    const heading = document.createElement('h3');
+    heading.id = 'capture-followup-title';
+    heading.tabIndex = -1;
+    heading.textContent = followup.question;
+
+    const hint = document.createElement('p');
+    hint.className = 'capture-review-intro';
+    hint.textContent = 'Type or speak your answer in the box above, then tap Sort my day. Or skip it, no pressure.';
+
+    const actions = document.createElement('div');
+    actions.className = 'capture-review-actions';
+    for (const [className, label] of [['cf-done', 'I\u2019m all set'], ['cf-stop', 'Don\u2019t ask me these']]) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn-capture-cancel ' + className;
+      button.textContent = label;
+      actions.appendChild(button);
+    }
+    panel.append(savedLine, heading, hint, actions);
+
+    slot.innerHTML = '';
+    slot.appendChild(panel);
+
+    // From now on the box is for the ANSWER; remember which saved draft it belongs to
+    this._followupAfter = followup.after;
+    if (this._originalPlaceholder === undefined) this._originalPlaceholder = input.placeholder;
+    input.placeholder = 'Your answer\u2026';
+    input.value = '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    heading.focus();
+  },
+
+  // Back to the normal capture box
+  endFollowup() {
+    this._followupAfter = '';
+    const input = document.getElementById('today-capture-input');
+    if (input && this._originalPlaceholder !== undefined) input.placeholder = this._originalPlaceholder;
+  },
+
+  // "Don't ask me these": switch the questions off for good (Settings can turn them back on)
+  async stopFollowups() {
+    try {
+      await fetch('/api/followups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: false })
+      });
+    } catch (error) {
+      // Not fatal: the questions just stay on
+    }
+    window.location.href = '/?added=1';
   },
 
   // The confirm button says how many things are ticked, and is off when none are
@@ -505,6 +601,11 @@ const Today = {
         return;
       }
       if (!response.ok) throw new Error('confirm failed');
+      const result = await response.json();
+      if (result.followup && result.followup.question) {
+        this.showFollowup(result.followup, result.committed);       // the items are saved; Sinéad asks one thing
+        return;
+      }
       window.location.href = '/?added=1';
     } catch (error) {
       this.syncReviewCount(card);

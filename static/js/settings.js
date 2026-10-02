@@ -8,6 +8,36 @@ const Settings = {
     this.initTheme();
     this.initDangerZone();
     this.initPush();
+    this.initFollowups();
+  },
+
+  // "Follow-up questions" switch: saved on the server straight away. If saving fails the switch
+  // goes back to how it was, so what you see is always what is really saved.
+  initFollowups() {
+    const toggle = document.getElementById('toggle-followups');
+    const note = document.getElementById('toggle-followups-note');
+    if (!toggle) return;
+    const original = note ? note.textContent : '';
+
+    toggle.addEventListener('change', async () => {
+      const wanted = toggle.checked;
+      toggle.disabled = true;
+      try {
+        const response = await fetch('/api/followups', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: wanted })
+        });
+        if (response.status === 401) { window.location.href = '/login'; return; }
+        if (!response.ok) throw new Error('save failed');
+        if (note) note.textContent = original;
+      } catch (error) {
+        toggle.checked = !wanted;
+        if (note) note.textContent = 'Couldn\u2019t save that. Please try again.';
+      } finally {
+        toggle.disabled = false;
+      }
+    });
   },
 
   // "Push notifications": reflects whether this browser is actually registered, and turns

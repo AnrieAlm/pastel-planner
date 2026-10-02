@@ -813,3 +813,25 @@ button.habit-chip.done .habit-chip-tick {
 /* Voice capture: waiting and keyboard states for the mic button */
 .capture-mic-btn:disabled { opacity: 0.55; cursor: progress; animation: none; }
 .capture-mic-btn:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
+/* Sinéad's follow-up question: same card look as the review card */
+.capture-followup {
+  margin-top: var(--sp-md);
+  padding: var(--sp-md);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+}
+.capture-followup h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  color: var(--text-primary);
+  margin: var(--sp-xs) 0;
+}
+.capture-followup h3:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.capture-followup-saved { font-size: var(--fs-sm); color: var(--text-secondary); }
+.capture-followup .capture-review-intro { margin-bottom: 0; }
+@media (max-width: 600px) {
+  .capture-followup .btn-capture-cancel { width: 100%; }
+}

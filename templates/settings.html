@@ -58,6 +58,15 @@
     <div class="settings-section">
       <h3>Sinéad</h3>
       <div class="settings-row">
+        <label for="toggle-followups">Follow-up questions</label>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-followups"{% if user.followups != false %} checked{% endif %} />
+          <span class="slider" aria-hidden="true"></span>
+        </label>
+      </div>
+      <p id="toggle-followups-note" style="font-size:var(--fs-xs);color:var(--text-secondary);">After you add a few things, Sinéad may ask if there's anything else for your day. No pressure to answer.</p>
+
+      <div class="settings-row">
         <label for="toggle-voice">Voice assistant</label>
         <label class="toggle">
           <input type="checkbox" id="toggle-voice" checked />

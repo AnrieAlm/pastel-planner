@@ -15,10 +15,10 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from fastapi.templating import Jinja2Templates
 
-from ai import (AUDIO_MAX_BYTES, AUDIO_MIN_BYTES, TEXT_MAX, AiUnavailable, RateLimited, confirmDraft,
-                parseDump, transcribeAudio)
+from ai import (AUDIO_MAX_BYTES, AUDIO_MIN_BYTES, TEXT_MAX, AiUnavailable, RateLimited, buildFollowup,
+                confirmDraft, parseDump, transcribeAudio)
 from account_helpers import (cleanTimezone, deleteAccountData, exportAllData, getTimezoneChoices,
-                             updateProfile)
+                             setFollowups, updateProfile)
 from auth import checkRequest
 from calendar_helpers import (buildGoogleCalendarLink, buildHabitIcs, buildIcs, getCalendarView,
                               habitCalendarLink, safeFileName)
@@ -880,6 +880,7 @@ def apiCaptureTranscribe(request: Request, audio: UploadFile = File(...)):
 
 class CaptureBody(BaseModel):
     text: str = ""
+    after: str = ""      # set when this text ANSWERS a follow-up question (the id of the draft just saved)
 
 
 # JSON: sorts the text and answers with the review card (HTML, drawn by Jinja2 so every word the
@@ -894,9 +895,11 @@ def apiCaptureParse(body: CaptureBody, request: Request):
     if not text:
         return JSONResponse({"error": "nothing to sort"}, status_code=400)
     try:
-        draft = parseDump(user, text)
+        draft = parseDump(user, text, after=body.after)
     except RateLimited:
         return JSONResponse({"error": "too many in an hour"}, status_code=429)
+    if draft.get("done"):                       # a follow-up answer that adds nothing ("no thanks")
+        return {"done": True}
 
     html = templates.get_template("partials/_capture_review.html").render(draft=draft)
     return HTMLResponse(html)
@@ -919,7 +922,24 @@ def apiCaptureConfirm(sessionId: str, body: CaptureConfirmBody, request: Request
         return JSONResponse({"error": "already saved"}, status_code=409)
     if outcome != "ok":
         return JSONResponse({"error": "not found"}, status_code=404)
-    return {"ok": True, "committed": counts}
+    # Maybe ask "did you miss anything?" (None most of the time)
+    return {"ok": True, "committed": counts, "followup": buildFollowup(user, sessionId, counts)}
+
+
+# What the "Don't ask me these" button and the Settings switch send
+class FollowupsBody(BaseModel):
+    enabled: bool = True
+
+
+# JSON: turns Sinéad's follow-up questions on or off
+@app.post("/api/followups")
+def apiFollowups(body: FollowupsBody, request: Request):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+
+    setFollowups(user["user_id"], body.enabled)
+    return {"ok": True, "enabled": body.enabled}
 
 
 # ---------- Push notifications (Stage 8). The live app only stores WHICH devices should get a

@@ -53,3 +53,11 @@ Tap the mic on the Today page, speak, tap again. The recording is sent to Groq (
 server and the words appear in the box so you can fix any mistakes before tapping Sort my day.
 The audio is held in memory only while it is sent: the app never saves it. The microphone needs
 https (Render gives you that; `http://localhost` also works). Recordings stop by themselves after 2 minutes.
+
+### "Did you miss anything?" follow-up
+
+After you confirm a real brain-dump (3 or more things), Sinéad may ask one gentle question about a
+part of your day you didn't mention (meals, people, work, errands, travel, rest). Your answer, typed
+or spoken, goes through the same review card. She asks at most twice, never after a one-liner, and you
+can switch it off with the "Follow-up questions" toggle in Settings (or "Don't ask me these").
+

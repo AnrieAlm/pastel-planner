@@ -55,6 +55,11 @@ def updateProfile(userId, name, timezoneName):
         users.update_one({"user_id": userId}, {"$set": changes})
 
 
+# "Follow-up questions" on or off (Sinéad asking "did you miss anything?" after a brain-dump)
+def setFollowups(userId, enabled):
+    users.update_one({"user_id": userId}, {"$set": {"followups": bool(enabled)}})
+
+
 # MongoDB ids and dates are not plain JSON, so turn them into text first
 def toPlain(value):
     if isinstance(value, ObjectId):
