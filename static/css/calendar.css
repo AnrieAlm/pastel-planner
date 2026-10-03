@@ -245,7 +245,7 @@
   font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--accent-primary);
-  min-height: 32px;
+  min-height: 44px; /* was 32px */
   margin-bottom: var(--sp-sm);
 }
 

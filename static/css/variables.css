@@ -20,9 +20,9 @@
 --day-circle-bg: rgba(58, 49, 40, 0.08);   /* was reusing --border-soft (0.12) — too dark once composited under --text-secondary, failed 4.5:1 at 4.34:1. 0.08 gives 4.67:1. */
   /* accent roles — same four roles in both themes */
   --accent-primary:      #5D7654; /* Sage */
-  --accent-secondary:    #B5716F; /* Rose */
-  --accent-tertiary:     #A17F1F; /* Gold */
-  --accent-quaternary:   #8A6B8C; /* Dusty Plum */
+  --accent-secondary:    #A85C59; /* Rose — darkened from #B5716F so white text on it reaches 4.5:1 (was 3.66:1) */
+  --accent-tertiary:     #8F701B; /* Gold — darkened from #A17F1F so white text on it reaches 4.5:1 (was 3.65:1) */
+  --accent-quaternary:   #896A8B; /* Dusty Plum — darkened from #8A6B8C so white text on it reaches 4.5:1 (was 4.45:1) */
   --calendar-secondary:  #8A6B8C; /* same as Dusty Plum — Cottagecore habit/deadline marker, unchanged */
   --accent-on:           #FDFBF7; /* text/icon colour sitting ON any accent */
 
@@ -51,7 +51,7 @@
 
   --calendar-bg:            #FDF8F1;
 --calendar-text:          #4A3B32;
---calendar-text-secondary: #8D7B6E;
+--calendar-text-secondary: #7D6D61; /* darkened from #8D7B6E — the day-of-week labels (Mon/Tue/…) were 3.83:1, below 4.5:1 */
 --calendar-mark:      #D4A5A5;
 --calendar-mark-tint: #E8C4C4;
   /* type */

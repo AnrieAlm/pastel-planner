@@ -130,17 +130,23 @@
 /* ===== Colour picker row — same 3 tokens as post-its & notes ===== */
 .colour-options {
   display: flex;
-  gap: var(--sp-sm);
+  gap: var(--sp-md); /* was --sp-sm (8px) — widened so colour-dot's invisible tap area below can't overlap its neighbour */
   margin-bottom: var(--sp-md);
 }
 
 .colour-dot {
+  position: relative;
   width: 32px;
   height: 32px;
   border-radius: var(--radius-full);
   border: 2px solid transparent;
   cursor: pointer;
   transition: transform 0.15s ease;
+}
+.colour-dot::after {               /* invisible 44px tap area, same technique as .tick-btn */
+  content: '';
+  position: absolute;
+  inset: -6px;
 }
 
 .colour-dot:hover {

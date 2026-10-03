@@ -76,7 +76,7 @@
   font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--text-secondary);
-  min-height: 32px;
+  min-height: 44px; /* was 32px */
   padding: 0 var(--sp-sm);
   border-radius: var(--radius-full);
   transition: color 0.15s ease, background 0.15s ease;
@@ -235,7 +235,7 @@
 .routine-block-remove:hover { background: var(--bg-card); color: var(--accent-secondary); }
 
 .routine-add-block {
-  min-height: 40px;
+  min-height: 44px; /* was 40px */
   padding: 0 var(--sp-md);
   border: 1.5px dashed var(--border-strong);
   border-radius: var(--radius-full);

@@ -269,7 +269,7 @@
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-full);
   padding: var(--sp-xs) var(--sp-md);
-  min-height: 36px;
+  min-height: 44px; /* was 36px — the whole chip is the tap target, not just the tick icon inside it */
   display: inline-flex;
   align-items: center;
   font-size: var(--fs-sm);

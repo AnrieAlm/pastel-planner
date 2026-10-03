@@ -146,30 +146,33 @@ gap: 4px;
 .note-card.colour-2 { border-left-color: var(--postit-2); }
 .note-card.colour-3 { border-left-color: var(--postit-3); }
 
+/* ===== POST-IT NOTES =====
+   A real CSS grid, not flex-wrap: the design calls for "2 columns mobile, 3-4 desktop", and a
+   fixed card width inside flex-wrap only gives 2 columns on SOME phone widths, not reliably —
+   on many common phones (390-414px) it silently fell back to 1 column. Fixed column counts in
+   the grid, with cards that stretch to fill, make the 2-column promise true everywhere. */
 .postit-board {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 28px;
-  justify-content: center;
-  padding: 24px 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-md);
+  background: var(--bg-card);
+  border-radius: 24px;
+  padding: 44px var(--sp-md) 32px;
+  border: 1px solid var(--border-soft);
+  position: relative;
 }
 
-  /* ===== POST-IT NOTES ===== */
-  .postit-board {
-    background: var(--bg-card);
-    border-radius: 24px;
-    padding: 60px 30px 40px;
-    border: 1px solid var(--border-soft);
-    display: flex; 
-    flex-wrap: wrap; 
-    gap: 32px;
-    justify-content: center;
-    position: relative;
-  }
-  
-  .postit {
+@media (min-width: 640px) {
+  .postit-board { grid-template-columns: repeat(3, 1fr); gap: 28px; padding: 60px 30px 40px; }
+}
+@media (min-width: 1000px) {
+  .postit-board { grid-template-columns: repeat(4, 1fr); }
+}
+
+.postit {
   position: relative;
-  width: 220px;
+  width: auto;       /* was a fixed 220px — the grid now controls each card's width */
+  min-width: 0;       /* lets a card shrink below its content's natural width inside a narrow grid cell */
   min-height: 200px;
   padding: 36px 20px 20px;
   border-radius: 2px;

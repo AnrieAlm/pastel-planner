@@ -35,10 +35,14 @@
   <link rel="stylesheet" href="/static/css/settings.css?v={{ assetVersion }}" />
   <link rel="stylesheet" href="/static/css/modals.css?v={{ assetVersion }}" />
 
-  {# Apply the saved theme before the page paints, so it does not flash light first #}
+  {# Apply the saved theme before the page paints, so it does not flash light first.
+     Must match settings.js's own isDark logic (midnight, or system matching a dark OS). #}
   <script>
     try {
-      if (localStorage.getItem('calyx-planner-theme') === 'midnight') {
+      const choice = localStorage.getItem('calyx-planner-theme');
+      const dark = choice === 'midnight'
+        || (choice === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      if (dark) {
         document.documentElement.setAttribute('data-theme', 'midnight');
         // the phone's top bar follows the chosen theme too
         document.querySelector('meta[name="theme-color"]').setAttribute('content', '#1A1F1C');
@@ -65,7 +69,7 @@
   </div>
 
   <div id="modal-overlay" class="modal-overlay hidden">
-    <div id="modal-content" class="modal-content"></div>
+    <div id="modal-content" class="modal-content" role="dialog" aria-modal="true"></div>
   </div>
   {% endblock %}
 

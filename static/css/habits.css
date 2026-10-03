@@ -100,7 +100,7 @@
   font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--text-secondary);
-  min-height: 32px;
+  min-height: 44px; /* was 32px */
   padding: 0 var(--sp-sm);
   margin-top: var(--sp-xs);
   border-radius: var(--radius-full);
