@@ -5,9 +5,12 @@
  * ai.py and in today.js. This file holds the lighter touches:
  *
  *   - playBriefing() / stopBriefing(): the Play button. It fetches today's summary from
- *     /api/briefing (plain sentences built from your own notes, habits and routine, no AI) and reads
- *     it aloud with the browser's built-in voice, while also showing the words in a small panel.
- *     Browsers that can't speak still show the words.
+ *     /api/briefing (plain sentences built from your own notes, habits and routine, no AI) and
+ *     shows them in a small panel. For the voice, it first tries Sinéad's own voice (Alba, a free
+ *     Piper model generated on the server at /api/briefing/audio) - the same calm voice on every
+ *     device, nothing to install. If that isn't available (not deployed yet, or the request
+ *     fails), it quietly falls back to the browser's own built-in voice, exactly as before.
+ *     Browsers that can't do either still show the words.
  *   - nudge(message): called from grocery.js; just logs for now.
  *
  * The three Play buttons (the one on Today, the floating one on desktop, and the bottom bar's centre
@@ -85,9 +88,17 @@ const SineadAI = {
       return;
     }
     const items = this._openPanel(sentences);
+
+    // Sinéad's own voice (Piper, running on the server) is tried first - the same calm voice on
+    // every device, nothing to install. true means it is already playing (or the person was
+    // signed out and is being sent to log in again); either way, nothing more to do here.
+    const playedWithServerVoice = await this._playServerVoice(run);
+    if (playedWithServerVoice) return;
+    if (run !== this._run) return;                       // stopped while we were waiting
+
     const canSpeak = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
     if (!canSpeak) {
-      // No voice in this browser: the words in the panel are the summary
+      // No voice available at all: the words in the panel are the summary
       this._showState('idle');
       this._say('This browser can\u2019t read aloud, so here it is in words.');
       return;
@@ -97,6 +108,56 @@ const SineadAI = {
     const voices = await this._loadVoices();
     if (run !== this._run) return;                       // stopped while the voices were loading
     this._speak(sentences, items, run, voices);
+  },
+
+  // Tries Sinéad's own voice: a single audio file from the server (Piper, Alba). Returns true if
+  // it started playing (the browser-voice fallback below is then skipped entirely) or if the
+  // person needed to be sent to log in again; false means "use the browser's own voice instead" -
+  // the voice model not being deployed yet, a network problem, or a browser that refuses to play
+  // it are all treated the same gentle way.
+  async _playServerVoice(run) {
+    let blobUrl;
+    try {
+      const response = await fetch('/api/briefing/audio');
+      if (response.status === 401) { window.location.href = '/login'; return true; }
+      if (!response.ok) return false;                     // most often 503: not available right now
+      const blob = await response.blob();
+      if (run !== this._run) return true;                 // stopped while we were waiting - don't start playing
+      blobUrl = URL.createObjectURL(blob);
+    } catch (error) {
+      return false;
+    }
+
+    const audio = new Audio(blobUrl);
+    let started = false;
+
+    audio.addEventListener('ended', () => {
+      URL.revokeObjectURL(blobUrl);
+      if (this._audioEl === audio) this._audioEl = null;
+      if (run === this._run) this._finished();
+    });
+    audio.addEventListener('error', () => {
+      URL.revokeObjectURL(blobUrl);
+      if (this._audioEl === audio) this._audioEl = null;
+      // If playback had already started, stop gracefully rather than switching voices mid-sentence
+      if (started && run === this._run) this._finished();
+    });
+
+    try {
+      await audio.play();
+    } catch (error) {
+      URL.revokeObjectURL(blobUrl);
+      return false;                                        // could not start at all - browser voice takes over
+    }
+    started = true;
+    if (run !== this._run) {                               // stopped while play() itself was still resolving
+      audio.pause();
+      URL.revokeObjectURL(blobUrl);
+      return true;
+    }
+    this._audioEl = audio;
+    this._showState('speaking');
+    return true;
   },
 
   // Reads the sentences one after another (short pieces are more reliable than one long speech)
@@ -225,9 +286,13 @@ const SineadAI = {
     this._showState('idle');
   },
 
-  // Stops the voice, closes the panel, and puts the buttons back to Play
+  // Stops the voice (whichever one is playing), closes the panel, and puts the buttons back to Play
   stopBriefing() {
     this._run++;
+    if (this._audioEl) {
+      this._audioEl.pause();
+      this._audioEl = null;
+    }
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     this._closePanel();
     this._showState('idle');

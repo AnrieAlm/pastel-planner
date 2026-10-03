@@ -109,3 +109,5 @@ def deleteAccountData(userId):
                        capture_sessions):
         collection.delete_many({"user_id": userId})
     users.delete_one({"user_id": userId})
+    import tts
+    tts.clearCachedAudio(userId)

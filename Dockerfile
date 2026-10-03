@@ -15,6 +15,11 @@ WORKDIR /app
 COPY --chown=user requirements.txt requirements.txt
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
+# Download Sinéad's speaking voice once, now, at build time — not on every request or every
+# time the free-tier server wakes back up. Piper (piper-tts) needs no extra system packages:
+# espeak-ng is compiled directly into the Python package. See tts.py for how it is used.
+RUN python -m piper.download_voices en_GB-alba-medium --download-dir voices
+
 # Copy the rest of the project into the container
 COPY --chown=user . /app
 

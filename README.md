@@ -61,6 +61,19 @@ part of your day you didn't mention (meals, people, work, errands, travel, rest)
 or spoken, goes through the same review card. She asks at most twice, never after a one-liner, and you
 can switch it off with the "Follow-up questions" toggle in Settings (or "Don't ask me these").
 
+## Sinéad's own voice (Piper, offline, free)
+
+The Play button first tries Sinéad's own voice: Alba, a small, free, offline voice model (Piper -
+`en_GB-alba-medium`) that runs inside the same container as the app. It is downloaded once, when
+the Docker image is built, not on every request, so there's no first-use download wait - only the
+much shorter time it takes to generate the audio (a second or so), which is cached per person per
+calendar day so pressing Play again that day is instant. Nothing is sent to any outside service,
+and nothing is written to disk - the audio lives in memory only, for one day.
+
+If that voice isn't available for any reason (a problem generating it, or `/api/briefing/audio`
+failing), the Play button quietly falls back to the browser's own built-in voice - the "Voice for
+the summary" picker in Settings still governs that fallback exactly as before.
+
 ## Play today's summary
 
 The Play button (the wide one under Today, the floating one on desktop, and the bottom bar's centre button

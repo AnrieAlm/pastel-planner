@@ -21,6 +21,7 @@ from account_helpers import (cleanTimezone, deleteAccountData, exportAllData, ge
                              setFollowups, setPreference, updateProfile)
 from auth import checkRequest
 from briefing_helpers import buildBriefing
+import tts
 from calendar_helpers import (buildGoogleCalendarLink, buildHabitIcs, buildIcs, getCalendarView,
                               habitCalendarLink, safeFileName)
 from bucket_helpers import (addBucketItem, deleteBucketItem, getBucketItems, moveBucketNotesToWishList,
@@ -864,6 +865,29 @@ def apiBriefing(request: Request):
         return JSONResponse({"error": "not logged in"}, status_code=401)
 
     return JSONResponse(buildBriefing(user), headers={"Cache-Control": "no-store"})
+
+
+# The spoken version: Piper (a free, offline voice) reading the same words the text endpoint
+# above returns. Cached per person per calendar day (their own timezone), so pressing Play more
+# than once the same day is instant. 503 (not an error page) means "use the browser's own voice
+# instead" - the one case the front end is built to expect and fall back from.
+@app.get("/api/briefing/audio")
+def apiBriefingAudio(request: Request):
+    status, user = checkRequest(request)
+    if status != "ok":
+        return JSONResponse({"error": "not logged in"}, status_code=401)
+
+    dayKey = getToday(user["timezone"]).isoformat()
+    audio = tts.getCachedAudio(user["user_id"], dayKey)
+    if audio is None:
+        try:
+            audio = tts.synthesize(buildBriefing(user)["text"])
+        except tts.VoiceUnavailable as error:
+            print("Piper could not make the audio brief:", error)
+            return JSONResponse({"error": "voice unavailable"}, status_code=503)
+        tts.setCachedAudio(user["user_id"], dayKey, audio)
+
+    return Response(audio, media_type="audio/wav", headers={"Cache-Control": "no-store"})
 
 
 # ---------- Sinéad (AI): sort a typed brain-dump into a DRAFT, then save only what is confirmed.

@@ -10,3 +10,4 @@ tzdata
 pillow
 firebase-admin
 groq
+piper-tts==1.8.0
