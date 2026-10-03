@@ -100,32 +100,34 @@ def describeNote(note, today):
     return "Undated"
 
 
-# Gets one person's notes for a filter chip, ready to show on the Notes page
+# Gets one person's notes for a filter chip, ready to show on the Notes page.
+# Every filter except "done" itself now excludes done notes - they get their own "Done" strip
+# at the bottom of the page instead of sitting, dimmed, inside the main grid.
 def getNotes(userId, filterName, timezoneName):
-    query = {"user_id": userId, "deleted_at": None}
-    sortBy = [("done", 1), ("created_at", -1)]
+    query = {"user_id": userId, "deleted_at": None, "done": False}
+    sortBy = [("created_at", -1)]
 
     if filterName == "undated":
-        query.update({"done": False, "date": None, "deadline": None})
+        query.update({"date": None, "deadline": None})
     elif filterName == "dated":
-        query.update({"done": False, "$or": [{"date": {"$ne": None}}, {"deadline": {"$ne": None}}]})
+        query.update({"$or": [{"date": {"$ne": None}}, {"deadline": {"$ne": None}}]})
         sortBy = [("date", 1), ("time", 1), ("created_at", -1)]
-    
-  
-    
     elif filterName == "urgent":
-        query.update({"done": False, "urgent": True})
+        query.update({"urgent": True})
     elif filterName == "done":
         query["done"] = True
         sortBy = [("completed_at", -1)]
 
     today = getToday(timezoneName)
+    zone = getZone(timezoneName)
     noteList = []
-    
+
     for note in notes.find(query).sort(sortBy):
         note["id"] = str(note["_id"])
         note["meta"] = describeNote(note, today)
         note["reminderLocal"] = reminderLocalValue(note.get("reminder_at"), timezoneName)
+        if filterName == "done":
+            note["doneDate"] = formatDoneDate(note.get("completed_at"), zone)
         noteList.append(note)
     return noteList
 

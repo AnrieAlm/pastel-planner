@@ -50,5 +50,41 @@
       </p>
       {% endfor %}
     </div>
+
+    {# Done notes get their own compact, 3-row scrolling strip instead of sitting dimmed in the
+       main grid - the same idea as the Bucket List's active/done split. Not shown when "Done" is
+       itself the chosen filter, since the grid above already shows exactly these notes. #}
+    {% if doneNotes %}
+    <h3 class="notes-done-heading">Done <span aria-hidden="true">·</span> <span class="notes-done-count">{{ doneNotes|length }}</span></h3>
+    <div class="notes-done-scroll">
+      <div class="notes-done-grid">
+        {% for note in doneNotes %}
+        <button type="button"
+                class="postit postit-mini colour-{{ note.color }} done"
+                data-modal="edit-note"
+                data-note-id="{{ note.id }}"
+                data-title="{{ note.title }}"
+                data-content="{{ note.content }}"
+                data-color="{{ note.color }}"
+                data-urgent="{{ 'true' if note.urgent else 'false' }}"
+                data-done="true"
+                data-date="{{ note.date or '' }}"
+                data-time="{{ note.time or '' }}"
+                data-deadline="{{ note.deadline or '' }}"
+                data-finish-by="{{ note.finish_by or '' }}"
+                data-reminder="{{ note.reminderLocal }}">
+          <h4>✓ {{ note.title }}</h4>
+          <span class="note-meta">{{ note.doneDate }}</span>
+        </button>
+        {% endfor %}
+      </div>
+      <button type="button" class="notes-done-nav prev" aria-label="Scroll left">
+        <span class="nav-icon" data-nav-icon="chevron-left"></span>
+      </button>
+      <button type="button" class="notes-done-nav next" aria-label="Scroll right">
+        <span class="nav-icon" data-nav-icon="chevron-right"></span>
+      </button>
+    </div>
+    {% endif %}
 </section>
 {% endblock %}

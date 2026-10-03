@@ -133,7 +133,7 @@ const Settings = {
     });
   },
 
-  // ===== Theme picker: Cottagecore / Midnight Garden / System =====
+  // ===== Theme picker: Cottagecore / Midnight Garden =====
   initTheme() {
     const saved = localStorage.getItem(this.STORAGE_KEY) || 'cottagecore';
     this.applyTheme(saved);
@@ -141,25 +141,17 @@ const Settings = {
 
     document.querySelectorAll('.theme-option').forEach(btn => {
       btn.addEventListener('click', () => {
-        const choice = btn.dataset.theme; // "cottagecore" | "midnight" | "system"
+        const choice = btn.dataset.theme; // "cottagecore" | "midnight"
         this.applyTheme(choice);
         this.updatePickerUI(choice);
         localStorage.setItem(this.STORAGE_KEY, choice);
       });
     });
-
-    // "System": if the phone or computer's own light/dark setting changes while the app is
-    // open, follow it immediately rather than waiting for the next page load
-    this._systemQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
-    this._systemQuery?.addEventListener?.('change', () => {
-      if ((localStorage.getItem(this.STORAGE_KEY) || 'cottagecore') === 'system') this.applyTheme('system');
-    });
   },
 
   applyTheme(choice) {
     const html = document.documentElement;
-    const isDark = choice === 'midnight'
-      || (choice === 'system' && window.matchMedia?.('(prefers-color-scheme: dark)').matches);
+    const isDark = choice === 'midnight';
     if (isDark) {
       html.setAttribute('data-theme', 'midnight');
     } else {

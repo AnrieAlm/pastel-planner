@@ -203,12 +203,18 @@
 .bucket-keepsake-row::-webkit-scrollbar { height: 5px; }
 .bucket-keepsake-row::-webkit-scrollbar-track { background: transparent; }
 .bucket-keepsake-row::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; }
+/* The row bleeds 24px past .bucket-keepsake-scroll's own box on each side (margin: 0 -24px above)
+   so cards can scroll edge-to-edge. The fade below used to stop at right:0 — the scroll box's OWN
+   edge — which is 24px short of where the row's content actually ends, leaving an unfaded, hard-
+   edged strip of cards that then got abruptly clipped by the page's padding. right:-24px moves the
+   fade's edge out to match the row's true bleed edge; the extra 24px of width keeps the visible
+   (non-transparent) part of the gradient the same size it was. */
 .bucket-keepsake-scroll::after {
   content: '';
   position: absolute;
-  top: 0; right: 0; bottom: 0;
-  width: 48px;
-  background: linear-gradient(90deg, transparent, var(--bg-base) 85%);
+  top: 0; right: -24px; bottom: 0;
+  width: 72px;
+  background: linear-gradient(90deg, transparent, var(--bg-base) 67%);
   pointer-events: none;
 }
 .bucket-slider-nav {

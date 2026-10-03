@@ -35,14 +35,10 @@
   <link rel="stylesheet" href="/static/css/settings.css?v={{ assetVersion }}" />
   <link rel="stylesheet" href="/static/css/modals.css?v={{ assetVersion }}" />
 
-  {# Apply the saved theme before the page paints, so it does not flash light first.
-     Must match settings.js's own isDark logic (midnight, or system matching a dark OS). #}
+  {# Apply the saved theme before the page paints, so it does not flash light first #}
   <script>
     try {
-      const choice = localStorage.getItem('calyx-planner-theme');
-      const dark = choice === 'midnight'
-        || (choice === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-      if (dark) {
+      if (localStorage.getItem('calyx-planner-theme') === 'midnight') {
         document.documentElement.setAttribute('data-theme', 'midnight');
         // the phone's top bar follows the chosen theme too
         document.querySelector('meta[name="theme-color"]').setAttribute('content', '#1A1F1C');

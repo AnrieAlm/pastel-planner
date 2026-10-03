@@ -192,8 +192,11 @@ def notesPage(request: Request):
     if activeFilter not in FILTERS:
         activeFilter = "all"
     noteList = getNotes(user["user_id"], activeFilter, user["timezone"])
+    # Done notes get their own strip below the main grid, except when "Done" itself is the
+    # chosen filter - the main grid is already just the done notes at that point
+    doneNotes = [] if activeFilter == "done" else getNotes(user["user_id"], "done", user["timezone"])
     return renderPage(request, "notes.html", "notes",
-                      {"user": user, "notes": noteList, "activeFilter": activeFilter})
+                      {"user": user, "notes": noteList, "doneNotes": doneNotes, "activeFilter": activeFilter})
 
 
 # Calendar: a month grid, with the selected day's notes shown beside or below it

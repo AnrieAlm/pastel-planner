@@ -10,8 +10,40 @@ const Notes = {
     this.initNoteCards();
     this.initForms();
     this.initFinishBy();
+    this.initDoneSlider();
     this.showUndoIfNeeded();
    
+  },
+
+  // The prev/next arrows on the "Done" strip - same idea as the Bucket List's own slider
+  // (see bucketlist.js's initSliders), scrolling by roughly one card-width at a time
+  initDoneSlider() {
+    const wrap = document.querySelector('.notes-done-scroll');
+    const grid = wrap?.querySelector('.notes-done-grid');
+    const prevBtn = wrap?.querySelector('.notes-done-nav.prev');
+    const nextBtn = wrap?.querySelector('.notes-done-nav.next');
+    if (!wrap || !grid || !prevBtn || !nextBtn) return;
+
+    const stepDistance = () => {
+      const cards = grid.querySelectorAll('.postit-mini');
+      if (cards.length < 1) return grid.clientWidth * 0.9;
+      const first = cards[0].getBoundingClientRect();
+      if (cards.length < 2) return first.width;
+      const second = cards[1].getBoundingClientRect();
+      return Math.abs(second.left - first.left) || first.width;
+    };
+
+    prevBtn.addEventListener('click', (e) => { e.stopPropagation(); grid.scrollBy({ left: -stepDistance(), behavior: 'smooth' }); });
+    nextBtn.addEventListener('click', (e) => { e.stopPropagation(); grid.scrollBy({ left: stepDistance(), behavior: 'smooth' }); });
+
+    const updateArrows = () => {
+      const atStart = grid.scrollLeft <= 2;
+      const atEnd = grid.scrollLeft + grid.clientWidth >= grid.scrollWidth - 2;
+      prevBtn.style.display = atStart ? 'none' : 'flex';
+      nextBtn.style.display = atEnd ? 'none' : 'flex';
+    };
+    grid.addEventListener('scroll', updateArrows, { passive: true });
+    updateArrows();
   },
 
   // Filter chips reload the page with ?filter=... (the server does the filtering)
